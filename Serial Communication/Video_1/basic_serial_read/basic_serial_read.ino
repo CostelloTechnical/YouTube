@@ -27,7 +27,7 @@ void loop() {
       }
       receivedCharcterIndex = 0;
       receivingData = false;
-      Serial.write("\n\r");
+      Serial.println();
     }
   }
 }
