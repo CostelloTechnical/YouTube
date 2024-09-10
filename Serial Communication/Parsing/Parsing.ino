@@ -5,7 +5,7 @@ char receivedCharacters[maxCharacters];
 char toParse[maxCharacters];
 char action[4];
 uint8_t pinNumber;
-char state[5];
+bool pinState;
 
 bool receivingData = false;
 bool dataReady = false;
@@ -13,7 +13,9 @@ uint8_t receivedCharcterIndex = 0;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(3, OUTPUT);
 }
 
 void loop() {
@@ -39,10 +41,10 @@ void loop() {
   }
   if (dataReady == true) {
     dataReady = false;
-    action[0] = '\0';
-    state[0] = '\0';
+
     strcpy(toParse, receivedCharacters);
     strtok(toParse, ",");
+
     if (sizeof(action) > strlen(toParse)) {
       strcpy(action, toParse);
     }
@@ -50,13 +52,14 @@ void loop() {
     pinNumber = atoi(strtok(NULL, ","));
 
     if (strcmp(action, "set") == 0) {
-      strcpy(toParse, strtok(NULL, ","));
-      if (sizeof(state) > strlen(toParse)) {
-        strcpy(state, toParse);
-      }
+      pinState = atoi(strtok(NULL, ","));
+      digitalWrite(pinNumber,pinState);
+      sprintf(toParse,"<%s,%d,%d>", action, pinNumber,digitalRead(pinNumber));
+      Serial.println(toParse);
     }
     else if(strcmp(action, "get") == 0){
-      digitalRead(pinNumber);
+      sprintf(toParse,"<%s,%d,%d>", action, pinNumber, digitalRead(pinNumber));
+      Serial.println(toParse);
     }
     else{
       Serial.print("Unknown command: ");
