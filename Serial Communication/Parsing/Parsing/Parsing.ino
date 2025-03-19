@@ -2,14 +2,14 @@ const char startCharacter = '<';
 const char endCharacter = '>';
 const uint8_t maxCharacters = 10;
 char receivedCharacters[maxCharacters];
+bool receivingData = false;
+bool dataReady = false;
+uint8_t receivedCharcterIndex = 0;
+
 char toParse[maxCharacters];
 char action[4];
 uint8_t pinNumber;
 bool pinState;
-
-bool receivingData = false;
-bool dataReady = false;
-uint8_t receivedCharcterIndex = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -41,24 +41,25 @@ void loop() {
   }
   if (dataReady == true) {
     dataReady = false;
+    action[0] = '\0';
 
     strcpy(toParse, receivedCharacters);
     strtok(toParse, ",");
 
-    if (sizeof(action) > strlen(toParse)) {
+    if (sizeof(action) > strlen(toParse)){
       strcpy(action, toParse);
     }
 
     pinNumber = atoi(strtok(NULL, ","));
 
-    if (strcmp(action, "set") == 0) {
+    if(strcmp(action, "set")==0){
       pinState = atoi(strtok(NULL, ","));
-      digitalWrite(pinNumber,pinState);
-      sprintf(toParse,"<%s,%d,%d>", action, pinNumber,digitalRead(pinNumber));
+      digitalWrite(pinNumber, pinState);
+      sprintf(toParse, "<%s,%d,%d>", action, pinNumber, digitalRead(pinNumber));
       Serial.println(toParse);
     }
     else if(strcmp(action, "get") == 0){
-      sprintf(toParse,"<%s,%d,%d>", action, pinNumber, digitalRead(pinNumber));
+      sprintf(toParse, "<%s,%d,%d>", action, pinNumber, digitalRead(pinNumber));
       Serial.println(toParse);
     }
     else{
