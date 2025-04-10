@@ -55,6 +55,5 @@ class dn24f08 {
         uint8_t _iterator = 0;
 
         uint8_t _outputValue = 0;
-        char _converter[10];
 };
 #endif

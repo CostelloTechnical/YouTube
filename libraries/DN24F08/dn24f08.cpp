@@ -52,22 +52,22 @@ void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
 }
 
 float dn24f08::getAnalog(analogInputs input){
-    if(input >= 0 && input <= 3){
+    if(input >= I1 && input <= I4){
         // Returns  milliamps for I1-I4.
         return (analogRead(_analogInputPins[input]) * 20.0 / 1023.0) * _gains[input] + _offsets[input];
     }
-    else if( input >= 4 && input <= 7 ){
+    else if( input >= V1 && input <= V4 ){
         // Returns a voltage for V1-V4.
         return (analogRead(_analogInputPins[input]) * 10.0 / 1023.0) * _gains[input] + _offsets[input];
     }
 }
 
 float dn24f08::getAnalogAverage(analogInputs input){
-    if(input >= 0 && input <= 3){
+    if(input >= I1 && input <= I4){
         // Returns average milliamps for I1-I4.
         return (_averageAnalog[input] * 20.0 / 1023.0) * _gains[input] + _offsets[input];
     }
-    else if( input >= 4 && input <= 7 ){
+    else if( input >= V1 && input <= V4 ){
         // Returns average voltage for V1-V4.
         return (_averageAnalog[input] * 10.0 / 1023.0) * _gains[input] + _offsets[input];
     }
@@ -111,24 +111,25 @@ void dn24f08::analogAverageReadings(uint16_t readings){
 }
 
 void dn24f08::displayFloat(float number) {
-    dtostrf(number, 0, 3, _converter);
-    uint8_t decimalIndex = (strchr(_converter, '.') - _converter);
+    char* converter;
+    dtostrf(number, 0, 3, converter);
+    uint8_t decimalIndex = (strchr(converter, '.') - converter);
     uint8_t decimalOffset = 0;
     for (uint8_t i = 0; i < 5; i++) {
       if (i == decimalIndex) {
         decimalOffset = 1;
       }  //
       else {
-        setShift(_converter[i] - '0', i - decimalOffset, i == decimalIndex - 1);
+        setShift(converter[i] - '0', i - decimalOffset, i == decimalIndex - 1);
       }
     }
 }
 
 void dn24f08::displayInteger(uint16_t number) {
-    uint8_t offset;
-    sprintf(_converter, "%d", number);
-    offset = strlen(_converter);
+    char* converter;
+    sprintf(converter, "%d", number);
+    uint8_t offset = strlen(converter);
     for (uint8_t i = 0; i < 5; i++) {
-      setShift(_converter[i] - '0', i + 4 - offset, false);
+      setShift(converter[i] - '0', i + 4 - offset, false);
     }
 }
