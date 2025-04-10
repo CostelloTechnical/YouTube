@@ -44,16 +44,17 @@ class dn24f08 {
         const uint8_t _digitEnable[4] = { 0x70, 0xB0, 0XD0, 0xE0 };
         const uint8_t _decimalPoint = 0x1;
 
-        const uint8_t _analogPins[8] = { A0, A1, A2, A3, A4, A5, A6, A7 };
-        float _gains[8] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
-        float _offsets[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-        float _averageAnalog[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-        uint32_t _averageSum[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-        uint32_t _averageTime_ms[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-        uint32_t _averageCounter[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        const uint8_t _analogPins = 8;
+        const uint8_t _analogInputPins[_analogPins] = { A0, A1, A2, A3, A4, A5, A6, A7 };
+        float _gains[_analogPins] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+        float _offsets[_analogPins] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        float _averageAnalog[_analogPins] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        uint32_t _averageSum[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        uint32_t _averageTime_ms[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        uint32_t _averageCounter[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
         uint8_t _iterator = 0;
 
-        uint8_t _outputs = 0;
+        uint8_t _outputValue = 0;
         char _converter[10];
 };
 #endif

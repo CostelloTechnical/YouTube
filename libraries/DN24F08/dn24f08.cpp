@@ -12,28 +12,28 @@ void dn24f08::init(){
     pinMode(_outLoad, OUTPUT);
     pinMode(_outClock, OUTPUT);
 
-    pinMode(_analogPins[I1], INPUT);
-    pinMode(_analogPins[I2], INPUT);
-    pinMode(_analogPins[I3], INPUT);
-    pinMode(_analogPins[I4], INPUT);
+    pinMode(_analogInputPins[I1], INPUT);
+    pinMode(_analogInputPins[I2], INPUT);
+    pinMode(_analogInputPins[I3], INPUT);
+    pinMode(_analogInputPins[I4], INPUT);
 
-    pinMode(_analogPins[V1], INPUT);
-    pinMode(_analogPins[V2], INPUT);
-    pinMode(_analogPins[V3], INPUT);
-    pinMode(_analogPins[V4], INPUT);
+    pinMode(_analogInputPins[V1], INPUT);
+    pinMode(_analogInputPins[V2], INPUT);
+    pinMode(_analogInputPins[V3], INPUT);
+    pinMode(_analogInputPins[V4], INPUT);
 }
 
 void dn24f08::setOutputs(uint8_t outputs){
-    _outputs = outputs;
+    _outputValue = outputs;
 }
 
 void dn24f08::setOutput(uint8_t output, bool state){
     if(output <= 8 && output > 0){
         if(state){
-            _outputs += 1 << (output - 1);
+            _outputValue += 1 << (output - 1);
         }
         else{
-            _outputs -= 1 << (output - 1);
+            _outputValue -= 1 << (output - 1);
         }
     }
 }
@@ -45,30 +45,44 @@ void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset)
 
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
     digitalWrite(_outLoad, false);
-    shiftOut(_outData, _outClock, MSBFIRST, _outputs);
+    shiftOut(_outData, _outClock, MSBFIRST, _outputValue);
     shiftOut(_outData, _outClock, LSBFIRST, _digitEnable[digit]);
     shiftOut(_outData, _outClock, LSBFIRST, _segmentNumbers[number] + (_decimalPoint * useDecimal));
     digitalWrite(_outLoad, true);
 }
 
 float dn24f08::getAnalog(analogInputs input){
-    return (analogRead(_analogPins[input])* 10.0 / 1023.0) * _gains[input] + _offsets[input];
+    if(input >= 0 && input <= 3){
+        // Returns  milliamps for I1-I4.
+        return (analogRead(_analogInputPins[input]) * 20.0 / 1023.0) * _gains[input] + _offsets[input];
+    }
+    else if( input >= 4 && input <= 7 ){
+        // Returns a voltage for V1-V4.
+        return (analogRead(_analogInputPins[input]) * 10.0 / 1023.0) * _gains[input] + _offsets[input];
+    }
 }
 
 float dn24f08::getAnalogAverage(analogInputs input){
-    return _averageAnalog[input];
+    if(input >= 0 && input <= 3){
+        // Returns average milliamps for I1-I4.
+        return (_averageAnalog[input] * 20.0 / 1023.0) * _gains[input] + _offsets[input];
+    }
+    else if( input >= 4 && input <= 7 ){
+        // Returns average voltage for V1-V4.
+        return (_averageAnalog[input] * 10.0 / 1023.0) * _gains[input] + _offsets[input];
+    }
 }
 
 void dn24f08::analogAverageTime(uint16_t duration_ms){
-    if(_iterator < 8){
+    if(_iterator < _analogPins){
         if (millis() - _averageTime_ms[_iterator] > duration_ms) {
-            _averageAnalog[_iterator] = ((_averageSum[_iterator] / _averageCounter[_iterator]) * 10.0 / 1023.0)  * _gains[_iterator] + _offsets[_iterator];
+            _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
             _averageSum[_iterator] = 0;
             _averageCounter[_iterator] = 0;
             _averageTime_ms[_iterator] = millis();
         }
         else {
-            _averageSum[_iterator] += analogRead(_analogPins[_iterator]);
+            _averageSum[_iterator] += analogRead(_analogInputPins[_iterator]);
             _averageCounter[_iterator]++;
         }
         _iterator++;
@@ -79,14 +93,14 @@ void dn24f08::analogAverageTime(uint16_t duration_ms){
 }
 
 void dn24f08::analogAverageReadings(uint16_t readings){
-    if(_iterator < 8){
+    if(_iterator < _analogPins){
         if (_averageCounter[_iterator] >= readings) {
-            _averageAnalog[_iterator] = ((_averageSum[_iterator] / _averageCounter[_iterator]) * 10.0 / 1023.0)  * _gains[_iterator] + _offsets[_iterator];
+            _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
             _averageSum[_iterator] = 0;
             _averageCounter[_iterator] = 0;
         }
         else {
-            _averageSum[_iterator] += analogRead(_analogPins[_iterator]);
+            _averageSum[_iterator] += analogRead(_analogInputPins[_iterator]);
             _averageCounter[_iterator]++;
         }
         _iterator++;
