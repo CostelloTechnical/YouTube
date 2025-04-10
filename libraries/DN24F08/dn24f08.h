@@ -44,7 +44,7 @@ class dn24f08 {
         const uint8_t _digitEnable[4] = { 0x70, 0xB0, 0XD0, 0xE0 };
         const uint8_t _decimalPoint = 0x1;
 
-        const uint8_t _analogPins = 8;
+        static const uint8_t _analogPins = 8;
         const uint8_t _analogInputPins[_analogPins] = { A0, A1, A2, A3, A4, A5, A6, A7 };
         float _gains[_analogPins] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
         float _offsets[_analogPins] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };

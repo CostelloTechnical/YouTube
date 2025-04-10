@@ -46,7 +46,7 @@ void displayCharacters(char* characters) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   plc.init();
   plc.setAnalogCalibration(V1, 1.1029, 0.0459);
 }
@@ -54,5 +54,5 @@ void setup() {
 void loop() {
   //plc.analogAverageReadings(100);
   plc.analogAverageTime(100);
-  plc.displayFloat(plc.getAnalogAverage(V1));
+  Serial.println();
 }
