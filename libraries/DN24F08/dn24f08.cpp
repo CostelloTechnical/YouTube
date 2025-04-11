@@ -21,6 +21,9 @@ void dn24f08::init(){
     pinMode(_analogInputPins[V2], INPUT);
     pinMode(_analogInputPins[V3], INPUT);
     pinMode(_analogInputPins[V4], INPUT);
+
+    setOutputs(0);
+    displayClear();
 }
 
 void dn24f08::setOutputs(uint8_t outputs){
@@ -36,6 +39,7 @@ void dn24f08::setOutput(uint8_t output, bool state){
             _outputValue -= 1 << (output - 1);
         }
     }
+    Serial.println(1 << (output - 1));
 }
 
 void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset){
@@ -43,12 +47,12 @@ void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset)
     _offsets[input] = offset;
 }
 
-void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
-    digitalWrite(_outLoad, false);
-    shiftOut(_outData, _outClock, MSBFIRST, _outputValue);
-    shiftOut(_outData, _outClock, LSBFIRST, _digitEnable[digit]);
-    shiftOut(_outData, _outClock, LSBFIRST, _segmentNumbers[number] + (_decimalPoint * useDecimal));
-    digitalWrite(_outLoad, true);
+void dn24f08::setAnalogEngineType(engineType type){
+
+}
+
+uint8_t dn24f08::getOutputs(){
+    return _outputValue;
 }
 
 float dn24f08::getAnalog(analogInputs input){
@@ -73,7 +77,7 @@ float dn24f08::getAnalogAverage(analogInputs input){
     }
 }
 
-void dn24f08::analogAverageTime(uint16_t duration_ms){
+void dn24f08::engineAnalogAverage_ms(uint16_t duration_ms){
     if(_iterator < _analogPins){
         if (millis() - _averageTime_ms[_iterator] > duration_ms) {
             _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
@@ -92,7 +96,7 @@ void dn24f08::analogAverageTime(uint16_t duration_ms){
     }
 }
 
-void dn24f08::analogAverageReadings(uint16_t readings){
+void dn24f08::engineAnalogAverage_readings(uint16_t readings){
     if(_iterator < _analogPins){
         if (_averageCounter[_iterator] >= readings) {
             _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
@@ -111,25 +115,37 @@ void dn24f08::analogAverageReadings(uint16_t readings){
 }
 
 void dn24f08::displayFloat(float number) {
-    char* converter;
-    dtostrf(number, 0, 3, converter);
-    uint8_t decimalIndex = (strchr(converter, '.') - converter);
+    dtostrf(number, 0, 3, _converter);
+    uint8_t decimalIndex = (strchr(_converter, '.') - _converter);
     uint8_t decimalOffset = 0;
     for (uint8_t i = 0; i < 5; i++) {
       if (i == decimalIndex) {
         decimalOffset = 1;
       }  //
       else {
-        setShift(converter[i] - '0', i - decimalOffset, i == decimalIndex - 1);
+        setShift(_converter[i] - '0', i - decimalOffset, i == decimalIndex - 1);
       }
     }
 }
 
 void dn24f08::displayInteger(uint16_t number) {
-    char* converter;
-    sprintf(converter, "%d", number);
-    uint8_t offset = strlen(converter);
+    sprintf(_converter, "%d", number);
+    uint8_t offset = strlen(_converter);
     for (uint8_t i = 0; i < 5; i++) {
-      setShift(converter[i] - '0', i + 4 - offset, false);
+      setShift(_converter[i] - '0', i + 4 - offset, false);
     }
+}
+
+void dn24f08::displayClear() {
+    for (uint8_t i = 0; i < 5; i++) {
+      setShift(36, i, false);
+    }
+}
+
+void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
+    digitalWrite(_outLoad, false);
+    shiftOut(_outData, _outClock, MSBFIRST, _outputValue);
+    shiftOut(_outData, _outClock, LSBFIRST, _digitEnable[digit]);
+    shiftOut(_outData, _outClock, LSBFIRST, _segmentCharacters[number] + (_decimalPoint * useDecimal));
+    digitalWrite(_outLoad, true);
 }

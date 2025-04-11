@@ -42,17 +42,16 @@ Communication is done via RS485:
 #include "dn24f08.h"
 dn24f08 plc;
 
-void displayCharacters(char* characters) {
-}
-
 void setup() {
   Serial.begin(115200);
   plc.init();
   plc.setAnalogCalibration(V1, 1.1029, 0.0459);
+  // for(uint8_t i =1; i <9; i++){
+  //   plc.setOutput(i, false);
+  // }
 }
 
 void loop() {
-  //plc.analogAverageReadings(100);
-  plc.analogAverageTime(100);
-  Serial.println();
+  //plc.analogAverageTime(100);
+  plc.displayClear();
 }
