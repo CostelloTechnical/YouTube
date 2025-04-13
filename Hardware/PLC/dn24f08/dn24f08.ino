@@ -39,19 +39,23 @@ Communication is done via RS485:
   TX = pin 1
   Recieve/Transmit = pin 13
 */
-#include "dn24f08.h"
+#include <dn24f08.h>
+#include <jct_serial.h>
 dn24f08 plc;
+jctSerial rs485;
 
 void setup() {
-  Serial.begin(115200);
   plc.init();
+  rs485.init(Serial, 9600, 13);
   plc.setAnalogCalibration(V1, 1.1029, 0.0459);
-  // for(uint8_t i =1; i <9; i++){
-  //   plc.setOutput(i, false);
-  // }
 }
 
 void loop() {
-  //plc.analogAverageTime(100);
   plc.displayClear();
+  rs485.check();
+  if(rs485.getDataReady()){
+    rs485.print(rs485.getReceivedCharacters());
+  }
+  Serial.println(plc.getInput(7));
+  delay(1000);
 }

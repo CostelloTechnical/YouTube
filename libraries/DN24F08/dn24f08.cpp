@@ -3,7 +3,7 @@
 dn24f08::dn24f08(){}
 
 void dn24f08::init(){
-    pinMode(_inData, OUTPUT);
+    pinMode(_inData, INPUT);
     pinMode(_inClock, OUTPUT);
     pinMode(_inLoad, OUTPUT);
   
@@ -32,14 +32,14 @@ void dn24f08::setOutputs(uint8_t outputs){
 
 void dn24f08::setOutput(uint8_t output, bool state){
     if(output <= 8 && output > 0){
+        output --;
         if(state){
-            _outputValue += 1 << (output - 1);
+            _outputValue |= (1 << output);
         }
         else{
-            _outputValue -= 1 << (output - 1);
+            _outputValue &= ~(1 << output);
         }
     }
-    Serial.println(1 << (output - 1));
 }
 
 void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset){
@@ -53,6 +53,21 @@ void dn24f08::setAnalogEngineType(engineType type){
 
 uint8_t dn24f08::getOutputs(){
     return _outputValue;
+}
+
+uint8_t dn24f08::getInputs(){
+    digitalWrite(_inLoad, LOW);
+    delayMicroseconds(20);
+    digitalWrite(_inLoad, HIGH);
+    delayMicroseconds(20);
+    digitalWrite(_inClock, HIGH);
+    _inputValue = shiftIn(_inData, _inClock, MSBFIRST);
+    return _inputValue;
+}
+
+uint8_t dn24f08::getInput(uint8_t input){
+    getInputs();
+    return (_inputValue & (1 << input)) == 0;
 }
 
 float dn24f08::getAnalog(analogInputs input){

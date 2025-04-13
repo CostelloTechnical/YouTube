@@ -13,6 +13,11 @@ enum analogInputs {
     V4 = 7
 };
 
+enum engineType {
+    TIME_MS,
+    READINGS
+};
+
 class dn24f08 {
     public:
         dn24f08();
@@ -20,11 +25,14 @@ class dn24f08 {
         void setOutputs(uint8_t outputs);
         void setOutput(uint8_t output, bool state);
         void setAnalogCalibration(analogInputs input, float gain, float offset);
+        void setAnalogEngineType(engineType type);
         uint8_t getOutputs();
+        uint8_t getInputs();
+        uint8_t getInput(uint8_t input);
         float getAnalog(analogInputs input);
         float getAnalogAverage(analogInputs input);
-        void analogAverageTime(uint16_t duration_ms);
-        void analogAverageReadings(uint16_t readings);
+        void engineAnalogAverage_ms(uint16_t duration_ms);
+        void engineAnalogAverage_readings(uint16_t readings);
         void displayFloat(float number);
         void displayInteger(uint16_t number);
         void displayClear();
@@ -57,5 +65,6 @@ class dn24f08 {
 
         char _converter[20];
         uint8_t _outputValue = 0;
+        uint8_t _inputValue = 0;
 };
 #endif
