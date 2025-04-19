@@ -24,12 +24,8 @@ void jctSerial::setTerminationCharacters(char start, char end){
 void jctSerial::check(){
   if (_serialPort->available() > 0) {
     char _receivedCharacter = _serialPort->read();
-    Serial.println(_receivedCharacter, HEX);
 
-    if (_receivedCharacter == _startCharacter) {
-      _receivingData = true;
-    } 
-    else if (_receivingData == true && _receivedCharacter != _endCharacter) {
+    if (_receivingData == true && _receivedCharacter != _endCharacter) {
       _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
       _receivedCharacterIndex++;
       if (_receivedCharacterIndex >= _maxCharacters) {
@@ -42,6 +38,9 @@ void jctSerial::check(){
       _receivingData = false;
       _dataReady = true;
     }
+    else if (_receivedCharacter == _startCharacter) {
+      _receivingData = true;
+    } 
   }
 }
 

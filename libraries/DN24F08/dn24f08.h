@@ -13,9 +13,17 @@ enum analogInputs {
     V4 = 7
 };
 
-enum engineType {
-    TIME_MS,
-    READINGS
+enum engineAverageType {
+    TIME_MS = 0,
+    READINGS = 1
+};
+
+enum engineDisplayType {
+    IDLE = 0,
+    CLEAR = 1,
+    ANALOG = 2,
+    INTEGER = 3,
+    CHARACTERS = 4
 };
 
 class dn24f08 {
@@ -25,20 +33,27 @@ class dn24f08 {
         void setOutputs(uint8_t outputs);
         void setOutput(uint8_t output, bool state);
         void setAnalogCalibration(analogInputs input, float gain, float offset);
-        void setAnalogEngineType(engineType type);
+        void setAnalogEngineType(engineAverageType type);
+        void setDisplayEngineType(engineDisplayType type);
+        void setDisplayAnalogPin(analogInputs pin);
+        void setDisplayInteger(uint16_t number);
         uint8_t getOutputs();
+        uint8_t getOutput(uint8_t output);
         uint8_t getInputs();
         uint8_t getInput(uint8_t input);
         float getAnalog(analogInputs input);
         float getAnalogAverage(analogInputs input);
         void engineAnalogAverage_ms(uint16_t duration_ms);
         void engineAnalogAverage_readings(uint16_t readings);
+        void engineDisplay();
         void displayFloat(float number);
         void displayInteger(uint16_t number);
         void displayClear();
 
     private:
         void setShift(uint8_t number, uint8_t digit, bool useDecimal);
+
+        const uint8_t _rxTxPin = 13;
 
         const uint8_t _inData = 2;
         const uint8_t _inClock = 3;
@@ -66,5 +81,10 @@ class dn24f08 {
         char _converter[20];
         uint8_t _outputValue = 0;
         uint8_t _inputValue = 0;
+
+        uint8_t _displayType = 0;
+        uint8_t _displayAnalogPin = 0;
+        uint16_t _displayNumber = 0;
+        bool _update = false;
 };
 #endif

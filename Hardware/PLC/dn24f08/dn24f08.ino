@@ -44,6 +44,12 @@ Communication is done via RS485:
 dn24f08 plc;
 jctSerial rs485;
 
+char message[100];
+char action[4];
+char type[3];
+uint8_t pin;
+char value[10];
+
 void setup() {
   plc.init();
   rs485.init(Serial, 9600, 13);
@@ -51,11 +57,83 @@ void setup() {
 }
 
 void loop() {
-  plc.displayClear();
+  plc.engineDisplay();
   rs485.check();
-  if(rs485.getDataReady()){
-    rs485.print(rs485.getReceivedCharacters());
+  if (rs485.getDataReady()) {
+    message[0] = '\0';
+    action[0] = '\0';
+    type[0] = '\0';
+    pin = 255;
+    value[0] = '\0';
+    strcpy(message, rs485.getReceivedCharacters());
+    strcpy(action, strtok(message, ","));
+    strcpy(type, strtok(NULL, ","));
+    pin = atoi(strtok(NULL, ","));
+    if (strcmp(action, "set") == 0) {
+      strcpy(value, strtok(NULL, ","));
+    }
+    if (strcmp(type, "DO") == 0) {
+      if (strcmp(action, "set") == 0) {
+        plc.setOutput(pin, (bool)atoi(value));
+      }  //
+      else if (strcmp(action, "get") == 0) {
+        sprintf(value, "%d", plc.getOutput(pin));
+      }
+    }  //
+    else if (strcmp(type, "DI") == 0) {
+      if (strcmp(action, "get") == 0) {
+        sprintf(value, "%d", plc.getInput(pin));
+      }  //
+      else if (strcmp(action, "set") == 0) {
+        strcpy(value, "NA");
+        ;
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
+    }  //
+    else if (strcmp(type, "AI") == 0) {
+      if (strcmp(action, "get") == 0) {
+        dtostrf(plc.getAnalog(pin), 0, 4, value);
+      }  //
+      else if (strcmp(action, "set") == 0) {
+        strcpy(value, "NA");
+        ;
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
+    }  //
+    else if (strcmp(type, "DT") == 0) {
+      if (strcmp(action, "set") == 0) {
+        plc.setDisplayEngineType(atoi(value));
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
+    }  //
+    else if (strcmp(type, "DP") == 0) {
+      if (strcmp(action, "set") == 0) {
+        plc.setDisplayAnalogPin(pin);
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
+    }  //
+    else if (strcmp(type, "DN") == 0) {
+      if (strcmp(action, "set") == 0) {
+        plc.setDisplayInteger(atoi(value));
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
+    }
+    sprintf(message, "<%s,%s,%d,%s>", action, type, pin, value);
+    rs485.print(message);
   }
-  Serial.println(plc.getInput(7));
-  delay(1000);
 }

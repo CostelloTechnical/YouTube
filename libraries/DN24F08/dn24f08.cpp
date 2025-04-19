@@ -23,7 +23,7 @@ void dn24f08::init(){
     pinMode(_analogInputPins[V4], INPUT);
 
     setOutputs(0);
-    displayClear();
+    setDisplayEngineType(CLEAR);
 }
 
 void dn24f08::setOutputs(uint8_t outputs){
@@ -32,6 +32,7 @@ void dn24f08::setOutputs(uint8_t outputs){
 
 void dn24f08::setOutput(uint8_t output, bool state){
     if(output <= 8 && output > 0){
+        _update = true;
         output --;
         if(state){
             _outputValue |= (1 << output);
@@ -47,21 +48,36 @@ void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset)
     _offsets[input] = offset;
 }
 
-void dn24f08::setAnalogEngineType(engineType type){
+void dn24f08::setAnalogEngineType(engineAverageType type){
 
+}
+
+void dn24f08::setDisplayEngineType(engineDisplayType type){
+    _displayType = type;
+}
+
+void dn24f08::setDisplayAnalogPin(analogInputs pin){
+    _displayAnalogPin = pin;
+}
+
+void dn24f08::setDisplayInteger(uint16_t number){
+    _displayNumber = number;
 }
 
 uint8_t dn24f08::getOutputs(){
     return _outputValue;
 }
 
+uint8_t dn24f08::getOutput(uint8_t output){
+    return (_outputValue & (1 << output)) == 0;
+}
+
 uint8_t dn24f08::getInputs(){
-    digitalWrite(_inLoad, LOW);
-    delayMicroseconds(20);
     digitalWrite(_inLoad, HIGH);
-    delayMicroseconds(20);
+    delayMicroseconds(5);
     digitalWrite(_inClock, HIGH);
     _inputValue = shiftIn(_inData, _inClock, MSBFIRST);
+    digitalWrite(_inLoad, LOW);
     return _inputValue;
 }
 
@@ -129,6 +145,36 @@ void dn24f08::engineAnalogAverage_readings(uint16_t readings){
     }
 }
 
+void dn24f08::engineDisplay(){
+    switch (_displayType) {
+        // Case for when currentState is RED
+        case IDLE:
+            displayClear();
+            break;
+
+        case CLEAR:
+            displayClear();
+            _displayType = IDLE;
+            break;
+
+        case ANALOG:
+            displayFloat(getAnalogAverage(_displayAnalogPin));
+            break;
+
+        case INTEGER:
+            displayInteger(_displayNumber);
+            break;
+
+        case CHARACTERS:
+
+            break;
+            
+        default:
+            displayClear();
+            break;
+    }
+}
+
 void dn24f08::displayFloat(float number) {
     dtostrf(number, 0, 3, _converter);
     uint8_t decimalIndex = (strchr(_converter, '.') - _converter);
@@ -152,9 +198,13 @@ void dn24f08::displayInteger(uint16_t number) {
 }
 
 void dn24f08::displayClear() {
-    for (uint8_t i = 0; i < 5; i++) {
-      setShift(36, i, false);
+    if(_update){
+        for (uint8_t i = 0; i < 5; i++) {
+            setShift(36, i, false);
+        }
+        _update = false;
     }
+
 }
 
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
