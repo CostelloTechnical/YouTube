@@ -43,6 +43,12 @@ Communication is done via RS485:
 #include <jct_serial.h>
 dn24f08 plc;
 jctSerial rs485;
+bool sequence = 0;
+uint8_t sequenceIterator = 1;
+uint32_t sequenceTime_ms = 0;
+
+char debug[254];
+bool state = false;
 
 char message[100];
 char action[4];
@@ -52,7 +58,7 @@ char value[10];
 
 void setup() {
   plc.init();
-  rs485.init(Serial, 9600, 13);
+  rs485.init(Serial, 115200, 13);
   plc.setAnalogCalibration(V1, 1.1029, 0.0459);
 }
 
@@ -132,8 +138,30 @@ void loop() {
         strcpy(value, "ERROR");
         ;
       }
+    }  //
+    else if (strcmp(type, "SQ") == 0) {
+      if (strcmp(action, "set") == 0) {
+        sequence = (bool)atoi(value);
+      }  //
+      else {
+        strcpy(value, "ERROR");
+        ;
+      }
     }
     sprintf(message, "<%s,%s,%d,%s>", action, type, pin, value);
     rs485.print(message);
+  }
+  if (sequence == true) {
+    if (sequenceIterator < 5) {
+      if (millis() - sequenceTime_ms > 500) {
+        plc.setOutput(sequenceIterator, !plc.getOutput(sequenceIterator));
+        sequenceIterator++;
+        sequenceTime_ms = millis();
+      }
+    }  //
+    else {
+      state = !state;
+      sequenceIterator = 1;
+    }
   }
 }

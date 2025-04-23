@@ -38,9 +38,9 @@ class dn24f08 {
         void setDisplayAnalogPin(analogInputs pin);
         void setDisplayInteger(uint16_t number);
         uint8_t getOutputs();
-        uint8_t getOutput(uint8_t output);
+        bool getOutput(uint8_t output);
         uint8_t getInputs();
-        uint8_t getInput(uint8_t input);
+        bool getInput(uint8_t input);
         float getAnalog(analogInputs input);
         float getAnalogAverage(analogInputs input);
         void engineAnalogAverage_ms(uint16_t duration_ms);

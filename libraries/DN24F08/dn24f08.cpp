@@ -54,6 +54,7 @@ void dn24f08::setAnalogEngineType(engineAverageType type){
 
 void dn24f08::setDisplayEngineType(engineDisplayType type){
     _displayType = type;
+    _update = true;
 }
 
 void dn24f08::setDisplayAnalogPin(analogInputs pin){
@@ -68,8 +69,11 @@ uint8_t dn24f08::getOutputs(){
     return _outputValue;
 }
 
-uint8_t dn24f08::getOutput(uint8_t output){
-    return (_outputValue & (1 << output)) == 0;
+bool dn24f08::getOutput(uint8_t output){
+    if(output <= 8 && output > 0){
+        output --;
+        return _outputValue & (1 << output);
+    }
 }
 
 uint8_t dn24f08::getInputs(){
@@ -81,7 +85,7 @@ uint8_t dn24f08::getInputs(){
     return _inputValue;
 }
 
-uint8_t dn24f08::getInput(uint8_t input){
+bool dn24f08::getInput(uint8_t input){
     getInputs();
     return (_inputValue & (1 << input)) == 0;
 }
@@ -166,7 +170,7 @@ void dn24f08::engineDisplay(){
             break;
 
         case CHARACTERS:
-
+            
             break;
             
         default:
@@ -204,7 +208,6 @@ void dn24f08::displayClear() {
         }
         _update = false;
     }
-
 }
 
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
