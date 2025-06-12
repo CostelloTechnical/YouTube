@@ -37,7 +37,7 @@ The 8 outputs and 7 segment display are controlled with 3 74HC595D ICs in series
 Communication is done via RS485:
   RX = pin 0
   TX = pin 1
-  Recieve/Transmit = pin 13
+  Recieve/Transmit enable = pin 13
 */
 #include <dn24f08.h>
 #include <jct_serial.h>
