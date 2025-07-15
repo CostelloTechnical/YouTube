@@ -1,5 +1,5 @@
-#ifndef DN24F08_H
-#define DN24F08_H
+#ifndef JCT_DN24F08_H
+#define JCT_DN24F08_H
 #include <Arduino.h>
 
 enum analogInputs {
@@ -11,6 +11,28 @@ enum analogInputs {
     V2 = 5,
     V3 = 6,
     V4 = 7
+};
+
+enum digitalInputs {
+    IN1 = 1,
+    IN2 = 2,
+    IN3 = 3,
+    IN4 = 4,
+    IN5 = 5,
+    IN6 = 6,
+    IN7 = 7,
+    IN8 = 8
+};
+
+enum digitalOutputs {
+    CH1 = 1,
+    CH2 = 2,
+    CH3 = 3,
+    CH4 = 4,
+    CH5 = 5,
+    CH6 = 6,
+    CH7 = 7,
+    CH8 = 8
 };
 
 enum engineAverageType {

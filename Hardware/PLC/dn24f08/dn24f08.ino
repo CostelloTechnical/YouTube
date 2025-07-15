@@ -39,11 +39,13 @@ Communication is done via RS485:
   TX = pin 1
   Recieve/Transmit enable = pin 13
 */
-#include <dn24f08.h>
+#include <jct_dn24f08.h>
 #include <jct_serial.h>
+
 dn24f08 plc;
 jctSerial rs485;
-bool sequence = 0;
+
+bool sequence = true;
 uint8_t sequenceIterator = 1;
 uint32_t sequenceTime_ms = 0;
 

@@ -1,4 +1,4 @@
-#include "dn24f08.h"
+#include "jct_dn24f08.h"
 
 dn24f08::dn24f08(){}
 
@@ -151,7 +151,6 @@ void dn24f08::engineAnalogAverage_readings(uint16_t readings){
 
 void dn24f08::engineDisplay(){
     switch (_displayType) {
-        // Case for when currentState is RED
         case IDLE:
             displayClear();
             break;
