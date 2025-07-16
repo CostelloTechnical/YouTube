@@ -12,9 +12,9 @@ I3 is connected to pin A2 (0-20mA)
 I4 is connected to pin A3 (0-20mA)
 
 V1 is connected to pin A4 (0-10V)
-V1 is connected to pin A5 (0-10V)
-V1 is connected to pin A6 (0-10V)
-V1 is connected to pin A7 (0-10V)
+V2 is connected to pin A5 (0-10V)
+V3 is connected to pin A6 (0-10V)
+V4 is connected to pin A7 (0-10V)
 
 The 8 inputs are on a 74HC165
   Data = pin 2
