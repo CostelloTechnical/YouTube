@@ -23,7 +23,8 @@ void dn24f08::init(){
     pinMode(_analogInputPins[V4], INPUT);
 
     setOutputs(0);
-    setDisplayEngineType(CLEAR);
+    _update = true;
+    displayClear();
 }
 
 void dn24f08::setOutputs(uint8_t outputs){
@@ -48,8 +49,9 @@ void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset)
     _offsets[input] = offset;
 }
 
-void dn24f08::setAnalogEngineType(engineAverageType type){
-
+void dn24f08::setAnalogEngineType(engineAverageType type, uint16_t value){
+    _analogAverageType = type;
+    _analogAverageValue = value;
 }
 
 void dn24f08::setDisplayEngineType(engineDisplayType type){
@@ -112,32 +114,26 @@ float dn24f08::getAnalogAverage(analogInputs input){
     }
 }
 
-void dn24f08::engineAnalogAverage_ms(uint16_t duration_ms){
-    if(_iterator < _analogPins){
-        if (millis() - _averageTime_ms[_iterator] > duration_ms) {
-            _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
-            _averageSum[_iterator] = 0;
-            _averageCounter[_iterator] = 0;
-            _averageTime_ms[_iterator] = millis();
-        }
-        else {
-            _averageSum[_iterator] += analogRead(_analogInputPins[_iterator]);
-            _averageCounter[_iterator]++;
-        }
-        _iterator++;
-    }
-    else{
-        _iterator = 0;
-    }
-}
 
-void dn24f08::engineAnalogAverage_readings(uint16_t readings){
+void dn24f08::engineAnalogAverage(){
     if(_iterator < _analogPins){
-        if (_averageCounter[_iterator] >= readings) {
+        bool valueReached = false;
+        if (_analogAverageType == TIME_MS) {
+            if (millis() - _averageTime_ms[_iterator] > _analogAverageValue) {
+                 valueReached = true;
+                 _averageTime_ms[_iterator] = millis();
+            }
+        }
+        else if (_analogAverageType == READINGS) {
+            if (_averageCounter[_iterator] >= _analogAverageValue) {
+                valueReached = true;
+            }
+        }
+        if(valueReached == true){
             _averageAnalog[_iterator] = (float)_averageSum[_iterator] / _averageCounter[_iterator];
             _averageSum[_iterator] = 0;
             _averageCounter[_iterator] = 0;
-        }
+        } 
         else {
             _averageSum[_iterator] += analogRead(_analogInputPins[_iterator]);
             _averageCounter[_iterator]++;

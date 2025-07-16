@@ -55,7 +55,7 @@ class dn24f08 {
         void setOutputs(uint8_t outputs);
         void setOutput(uint8_t output, bool state);
         void setAnalogCalibration(analogInputs input, float gain, float offset);
-        void setAnalogEngineType(engineAverageType type);
+        void setAnalogEngineType(engineAverageType type, uint16_t value);
         void setDisplayEngineType(engineDisplayType type);
         void setDisplayAnalogPin(analogInputs pin);
         void setDisplayInteger(uint16_t number);
@@ -65,8 +65,7 @@ class dn24f08 {
         bool getInput(uint8_t input);
         float getAnalog(analogInputs input);
         float getAnalogAverage(analogInputs input);
-        void engineAnalogAverage_ms(uint16_t duration_ms);
-        void engineAnalogAverage_readings(uint16_t readings);
+        void engineAnalogAverage();
         void engineDisplay();
         void displayFloat(float number);
         void displayInteger(uint16_t number);
@@ -108,5 +107,8 @@ class dn24f08 {
         uint8_t _displayAnalogPin = 0;
         uint16_t _displayNumber = 0;
         bool _update = false;
+
+        uint8_t _analogAverageType = 0;
+        uint16_t _analogAverageValue = 100;
 };
 #endif
