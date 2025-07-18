@@ -27,6 +27,15 @@ void dn24f08::init(){
     displayClear();
 }
 
+void dn24f08::setCommunicationConfiguration(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
+  _serialPort = &serialPort;
+  _serialPort->begin(baud);
+  digitalWrite(_rxTxPin, false);
+
+  _startCharacter = startCharacter;
+  _endCharacter = endCharacter;
+}
+
 void dn24f08::setOutputs(uint8_t outputs){
     _outputValue = outputs;
 }
@@ -203,6 +212,64 @@ void dn24f08::displayClear() {
         }
         _update = false;
     }
+}
+
+void dn24f08::checkCommunication(){
+  if (_serialPort->available() > 0) {
+    char _receivedCharacter = _serialPort->read();
+
+    if (_receivingData == true && _receivedCharacter != _endCharacter) {
+      _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
+      _receivedCharacterIndex++;
+      if (_receivedCharacterIndex >= _maxCharacters) {
+        _receivedCharacterIndex = _maxCharacters - 1;
+      }
+    } 
+    else if (_receivingData == true && _receivedCharacter == _endCharacter) {
+      _receivedCharacters[_receivedCharacterIndex] = '\0';
+      _receivedCharacterIndex = 0;
+      _receivingData = false;
+      _dataReady = true;
+    }
+    else if (_receivedCharacter == _startCharacter) {
+      _receivingData = true;
+    } 
+  }
+}
+
+void dn24f08::printS(String toPrint){
+    digitalWrite(_rxTxPin, true);
+    _serialPort->print(toPrint);
+    _serialPort->flush();
+    digitalWrite(_rxTxPin, false);
+}
+
+void dn24f08::print(const char *toPrint){
+    digitalWrite(_rxTxPin, true);
+    _serialPort->print(toPrint);
+    _serialPort->flush();
+    digitalWrite(_rxTxPin, false);
+}
+
+void dn24f08::println(const char *toPrint){
+    digitalWrite(_rxTxPin, true);
+    _serialPort->println(toPrint);
+    _serialPort->flush();
+    digitalWrite(_rxTxPin, false);
+}
+
+bool dn24f08::getDataReady(){
+  if (_dataReady == true){
+    _dataReady = false;
+    return true;
+  }//
+  else{
+    return false;
+  }
+}
+
+char* dn24f08::getReceivedCharacters(){
+  return _receivedCharacters;
 }
 
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {

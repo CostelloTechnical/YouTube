@@ -52,6 +52,7 @@ class dn24f08 {
     public:
         dn24f08();
         void init();
+        void setCommunicationConfiguration(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
         void setOutputs(uint8_t outputs);
         void setOutput(uint8_t output, bool state);
         void setAnalogCalibration(analogInputs input, float gain, float offset);
@@ -70,6 +71,12 @@ class dn24f08 {
         void displayFloat(float number);
         void displayInteger(uint16_t number);
         void displayClear();
+        void checkCommunication();
+        void printS(String toPrint);
+        void print(const char *toPrint);
+        void println(const char *toPrint);
+        bool getDataReady();
+        char* getReceivedCharacters();
 
     private:
         void setShift(uint8_t number, uint8_t digit, bool useDecimal);
@@ -110,5 +117,16 @@ class dn24f08 {
 
         uint8_t _analogAverageType = 0;
         uint16_t _analogAverageValue = 100;
+
+        bool _dataReady = false;
+        bool _receivingData  = false;
+        const uint8_t _maxCharacters = 255;
+        uint8_t _element = 0;
+        char _startCharacter = '<';
+        char _endCharacter = '>';
+        char _receivedCharacter;
+        uint8_t _receivedCharacterIndex = 0;
+        char _receivedCharacters[255];
+        HardwareSerial* _serialPort;
 };
 #endif
