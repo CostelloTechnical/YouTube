@@ -3,6 +3,8 @@
 dn24f08::dn24f08(){}
 
 void dn24f08::init(){
+    pinMode(_rxTxPin, OUTPUT);
+
     pinMode(_inData, INPUT);
     pinMode(_inClock, OUTPUT);
     pinMode(_inLoad, OUTPUT);
@@ -239,6 +241,7 @@ void dn24f08::checkCommunication(){
 
 void dn24f08::printS(String toPrint){
     digitalWrite(_rxTxPin, true);
+    delayMicroseconds(500);
     _serialPort->print(toPrint);
     _serialPort->flush();
     digitalWrite(_rxTxPin, false);
@@ -246,6 +249,7 @@ void dn24f08::printS(String toPrint){
 
 void dn24f08::print(const char *toPrint){
     digitalWrite(_rxTxPin, true);
+    delayMicroseconds(500);
     _serialPort->print(toPrint);
     _serialPort->flush();
     digitalWrite(_rxTxPin, false);
@@ -253,6 +257,7 @@ void dn24f08::print(const char *toPrint){
 
 void dn24f08::println(const char *toPrint){
     digitalWrite(_rxTxPin, true);
+    delayMicroseconds(500);
     _serialPort->println(toPrint);
     _serialPort->flush();
     digitalWrite(_rxTxPin, false);
