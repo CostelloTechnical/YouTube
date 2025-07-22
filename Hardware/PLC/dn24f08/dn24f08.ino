@@ -1,10 +1,10 @@
 /*
 The nano board must be 5V logic compatable.
 
-Key 1 connected to pin 5
-Key 2 connected to pin 6
-Key 3 connected to pin 7
-Key 4 connected to pin 8
+Key 1 connected to pin 5 (PB0) (PCINT0)
+Key 2 connected to pin 6 (PD7) (PCINT23)
+Key 3 connected to pin 7 (PD6) (PCINT22)
+Key 4 connected to pin 8 (PD5) (PCINT21)
 
 I1 is connected to pin A0 (0-20mA)
 I2 is connected to pin A1 (0-20mA)
@@ -154,7 +154,7 @@ void loop() {
     rs485.print(message);
   }
   if (sequence == true) {
-    if (sequenceIterator < 5) {
+    if (sequenceIterator < 9) {
       if (millis() - sequenceTime_ms > 500) {
         plc.setOutput(sequenceIterator, !plc.getOutput(sequenceIterator));
         sequenceIterator++;

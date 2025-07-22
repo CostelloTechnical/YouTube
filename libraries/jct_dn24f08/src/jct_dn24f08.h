@@ -2,6 +2,13 @@
 #define JCT_DN24F08_H
 #include <Arduino.h>
 
+enum buttonsInputs {
+    KEY1 = 1,
+    KEY2 = 2,
+    KEY3 = 3,
+    KEY4 = 4
+};
+
 enum analogInputs {
     I1 = 0,
     I2 = 1,
@@ -51,8 +58,11 @@ enum engineDisplayType {
 class dn24f08 {
     public:
         dn24f08();
+        static dn24f08* _objectPointer;
+        static volatile uint8_t _previousPortB;
+        static volatile uint8_t _previousPortD;
         void init();
-        void setCommunicationConfiguration(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
+        void initCommunication(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
         void setOutputs(uint8_t outputs);
         void setOutput(uint8_t output, bool state);
         void setAnalogCalibration(analogInputs input, float gain, float offset);
@@ -60,6 +70,8 @@ class dn24f08 {
         void setDisplayEngineType(engineDisplayType type);
         void setDisplayAnalogPin(analogInputs pin);
         void setDisplayInteger(uint16_t number);
+        void setCheckButton(uint8_t pin);
+        bool getKeyPressed(uint8_t key);
         uint8_t getOutputs();
         bool getOutput(uint8_t output);
         uint8_t getInputs();
@@ -68,10 +80,12 @@ class dn24f08 {
         float getAnalogAverage(analogInputs input);
         void engineAnalogAverage();
         void engineDisplay();
+        void engineButtons();
+        void engineCommunication();
+        void engine();
         void displayFloat(float number);
         void displayInteger(uint16_t number);
         void displayClear();
-        void checkCommunication();
         void printS(String toPrint);
         void print(const char *toPrint);
         void println(const char *toPrint);
@@ -80,17 +94,30 @@ class dn24f08 {
 
     private:
         void setShift(uint8_t number, uint8_t digit, bool useDecimal);
-
-        const uint8_t _rxTxPin = 13;
+        
+        static const uint8_t _buttons = 4;
+        const uint8_t _keys[_buttons] = {_key1, _key2, _key3, _key4};
+ 
+        bool _checkButtons[_buttons] = {false, false, false, false};
+        bool _pressed_flags[_buttons] = {false, false, false, false};
+        uint16_t _debounce_ms[_buttons] = {100, 100, 100, 100};
+        uint32_t _checkCache_ms[_buttons] = {0, 0, 0, 0};
 
         const uint8_t _inData = 2;
         const uint8_t _inClock = 3;
         const uint8_t _inLoad = 4;
 
+        const uint8_t _key1 = 5; // (PD5) (PCINT21) (PCIE2)
+        const uint8_t _key2 = 6; // (PD6) (PCINT22) (PCIE2)
+        const uint8_t _key3 = 7; // (PD7) (PCINT23) (PCIE2)
+        const uint8_t _key4 = 8; // (PB0) (PCINT0) (PCIE0)
+
         const uint8_t _outData = 9;
         const uint8_t _outEnable = 10;
         const uint8_t _outLoad = 11;
         const uint8_t _outClock = 12;
+
+        const uint8_t _rxTxPin = 13;
 
         const uint8_t _segmentCharacters[37] = { 0xFC, 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 0x9C, 0x7A, 0x9E, 0x8E, 0x6E, 0x2E, 0x60, 0x20, 0x78, 0x1C, 0x2A, 0xFC, 0x3A, 0xCE, 0xE6, 0x0A, 0xB6, 0x1E, 0x7C, 0x38, 0x76, 0x02, 0x10, 0xC6, 0x00 };
         const uint8_t _digitEnable[4] = { 0x70, 0xB0, 0XD0, 0xE0 };

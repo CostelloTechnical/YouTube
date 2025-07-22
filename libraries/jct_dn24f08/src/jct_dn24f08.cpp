@@ -1,18 +1,30 @@
 #include "jct_dn24f08.h"
 
+dn24f08* dn24f08::_objectPointer = nullptr;
+volatile uint8_t dn24f08::_previousPortB = 0;
+volatile uint8_t dn24f08::_previousPortD = 0;
+
 dn24f08::dn24f08(){}
 
 void dn24f08::init(){
-    pinMode(_rxTxPin, OUTPUT);
+
+    _objectPointer = this;
 
     pinMode(_inData, INPUT);
     pinMode(_inClock, OUTPUT);
     pinMode(_inLoad, OUTPUT);
+
+    pinMode(_key1, INPUT_PULLUP);
+    pinMode(_key2, INPUT_PULLUP);
+    pinMode(_key3, INPUT_PULLUP);
+    pinMode(_key4, INPUT_PULLUP);
   
     pinMode(_outData, OUTPUT);
     pinMode(_outEnable, OUTPUT);
     pinMode(_outLoad, OUTPUT);
     pinMode(_outClock, OUTPUT);
+
+    pinMode(_rxTxPin, OUTPUT);
 
     pinMode(_analogInputPins[I1], INPUT);
     pinMode(_analogInputPins[I2], INPUT);
@@ -24,12 +36,20 @@ void dn24f08::init(){
     pinMode(_analogInputPins[V3], INPUT);
     pinMode(_analogInputPins[V4], INPUT);
 
+    PCICR |= B00000101; // Enables pin change interrupts on ports B and D. 
+    PCMSK0 |= B00000001; // Enables pin change interrupt on port B, pin 0. Pin 5 on the nano.
+    PCMSK2 |= B11100000; // Enables pin change interrupts on port D, pins 5, 6 and 7. Pins 8, 7, 6 on the nano.
+    
+    _previousPortB = PINB;
+    _previousPortD = PIND;
+
     setOutputs(0);
     _update = true;
     displayClear();
 }
 
-void dn24f08::setCommunicationConfiguration(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
+// Initialize communications.
+void dn24f08::initCommunication(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
   _serialPort = &serialPort;
   _serialPort->begin(baud);
   digitalWrite(_rxTxPin, false);
@@ -78,6 +98,21 @@ void dn24f08::setDisplayInteger(uint16_t number){
     _displayNumber = number;
 }
 
+void dn24f08::setCheckButton(uint8_t pin){
+    if(pin < _buttons){
+        _checkButtons[pin] = true;
+        _checkCache_ms[pin] = millis();
+    }
+}
+
+bool dn24f08::getKeyPressed(uint8_t key){
+    if(key > 0 && key < _buttons + 1){
+        bool pressed = _pressed_flags[key - 1];
+        _pressed_flags[key - 1] = false;
+        return pressed;
+    }
+}
+
 uint8_t dn24f08::getOutputs(){
     return _outputValue;
 }
@@ -124,7 +159,6 @@ float dn24f08::getAnalogAverage(analogInputs input){
         return (_averageAnalog[input] * 10.0 / 1023.0) * _gains[input] + _offsets[input];
     }
 }
-
 
 void dn24f08::engineAnalogAverage(){
     if(_iterator < _analogPins){
@@ -185,6 +219,45 @@ void dn24f08::engineDisplay(){
     }
 }
 
+void dn24f08::engineButtons(){
+    for(uint8_t i =0; i < _buttons; i++){
+        if(_checkButtons[i] == true && ((millis() - _checkCache_ms[i]) >=_debounce_ms[i])){
+            _pressed_flags[i] = digitalRead(_keys[i]) == HIGH;
+            _checkButtons[i] = false;
+        }
+    }
+}
+
+void dn24f08::engineCommunication(){
+  if (_serialPort->available() > 0) {
+    char _receivedCharacter = _serialPort->read();
+
+    if (_receivingData == true && _receivedCharacter != _endCharacter) {
+      _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
+      _receivedCharacterIndex++;
+      if (_receivedCharacterIndex >= _maxCharacters) {
+        _receivedCharacterIndex = _maxCharacters - 1;
+      }
+    } 
+    else if (_receivingData == true && _receivedCharacter == _endCharacter) {
+      _receivedCharacters[_receivedCharacterIndex] = '\0';
+      _receivedCharacterIndex = 0;
+      _receivingData = false;
+      _dataReady = true;
+    }
+    else if (_receivedCharacter == _startCharacter) {
+      _receivingData = true;
+    } 
+  }
+}
+
+void dn24f08::engine(){
+    engineAnalogAverage();
+    engineDisplay();
+    engineButtons();
+    engineCommunication();
+}
+
 void dn24f08::displayFloat(float number) {
     dtostrf(number, 0, 3, _converter);
     uint8_t decimalIndex = (strchr(_converter, '.') - _converter);
@@ -214,29 +287,6 @@ void dn24f08::displayClear() {
         }
         _update = false;
     }
-}
-
-void dn24f08::checkCommunication(){
-  if (_serialPort->available() > 0) {
-    char _receivedCharacter = _serialPort->read();
-
-    if (_receivingData == true && _receivedCharacter != _endCharacter) {
-      _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
-      _receivedCharacterIndex++;
-      if (_receivedCharacterIndex >= _maxCharacters) {
-        _receivedCharacterIndex = _maxCharacters - 1;
-      }
-    } 
-    else if (_receivingData == true && _receivedCharacter == _endCharacter) {
-      _receivedCharacters[_receivedCharacterIndex] = '\0';
-      _receivedCharacterIndex = 0;
-      _receivingData = false;
-      _dataReady = true;
-    }
-    else if (_receivedCharacter == _startCharacter) {
-      _receivingData = true;
-    } 
-  }
 }
 
 void dn24f08::printS(String toPrint){
@@ -283,4 +333,27 @@ void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
     shiftOut(_outData, _outClock, LSBFIRST, _digitEnable[digit]);
     shiftOut(_outData, _outClock, LSBFIRST, _segmentCharacters[number] + (_decimalPoint * useDecimal));
     digitalWrite(_outLoad, true);
+}
+
+ISR(PCINT0_vect) { // Pins D8-D13
+    uint8_t portB = PINB;
+    uint8_t changed_bits = portB ^ dn24f08::_previousPortB;
+    dn24f08::_previousPortB = portB;
+    if (!dn24f08::_objectPointer) return;
+    if (changed_bits & 1 && (portB & 1) == 0) {
+        dn24f08::_objectPointer->setCheckButton(3);
+    }
+}
+
+ISR(PCINT2_vect) { // Pins D0-D7
+    uint8_t portD = PIND;
+    uint8_t changed_bits = portD ^ dn24f08::_previousPortD;
+    dn24f08::_previousPortD = portD;
+    if (!dn24f08::_objectPointer) return;
+
+    for (uint8_t i = 5; i <= 7; i++) {
+        if ((changed_bits >> i) & 1 && ((portD >> i) & 1) == 0) {
+            dn24f08::_objectPointer->setCheckButton(i - 5);
+        }
+    }
 }
