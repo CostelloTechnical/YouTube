@@ -3,12 +3,12 @@
 dn24f08 plc;
 
 void setup() {
-  plc.init();
-  plc.initCommunication(Serial, 9600, '<', '>');
+  plc.init(Serial, 9600, '\n');
+  // plc.init(Serial, 9600, '<', '>'); 
 }
 
 void loop() {
-  plc.checkCommunication();
+  plc.engineCommunication();
 
   if (plc.getDataReady() == true) {
     plc.println(plc.getReceivedCharacters());

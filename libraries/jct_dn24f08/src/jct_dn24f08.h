@@ -52,22 +52,40 @@ enum engineDisplayType {
     CLEAR = 1,
     ANALOG = 2,
     INTEGER = 3,
-    CHARACTERS = 4
 };
 
 class dn24f08 {
     public:
         dn24f08();
-        static dn24f08* _objectPointer;
+        static dn24f08* _classPointer;
         static volatile uint8_t _previousPortB;
         static volatile uint8_t _previousPortD;
+        // Initializer if not intending to use the Serial class.
         void init();
-        void initCommunication(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
+
+        // Initializer if intending to use the Serial class with a start character and end character.
+        void init(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
+
+        // Initializer if intending to use the Serial class with only an end character.
+        void init(HardwareSerial& serialPort, uint32_t baud, char endCharacter);
+
+        // Sets the value of the 8 outputs in binary. (Updated with display engine)
         void setOutputs(uint8_t outputs);
+
+        // Set the value of a single output. (Updated with display engine)
         void setOutput(uint8_t output, bool state);
+
+        // Set the offset and gain of an analog input.
         void setAnalogCalibration(analogInputs input, float gain, float offset);
+
+        /*  Set the type of analog engine to be used, a time or readings based system.
+            The value is either milliseconds or number oif readings.*/
         void setAnalogEngineType(engineAverageType type, uint16_t value);
+
+        // Set if the display should be cleared, show an analog input or an integer.
         void setDisplayEngineType(engineDisplayType type);
+
+        
         void setDisplayAnalogPin(analogInputs pin);
         void setDisplayInteger(uint16_t number);
         void setCheckButton(uint8_t pin);
@@ -145,6 +163,7 @@ class dn24f08 {
         uint8_t _analogAverageType = 0;
         uint16_t _analogAverageValue = 100;
 
+        bool _useStartCharacter = false;
         bool _dataReady = false;
         bool _receivingData  = false;
         const uint8_t _maxCharacters = 255;

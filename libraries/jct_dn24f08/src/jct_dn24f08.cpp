@@ -1,67 +1,90 @@
 #include "jct_dn24f08.h"
 
-dn24f08* dn24f08::_objectPointer = nullptr;
+dn24f08* dn24f08::_classPointer = nullptr;
 volatile uint8_t dn24f08::_previousPortB = 0;
 volatile uint8_t dn24f08::_previousPortD = 0;
 
 dn24f08::dn24f08(){}
 
+// Initializer if not intending to use the Serial class.
 void dn24f08::init(){
+    // Used by the button ISR to point back to this class.
+    _classPointer = this;
 
-    _objectPointer = this;
-
+    // Setting the pin modes for the 8 inputs are on a 74HC165.
     pinMode(_inData, INPUT);
     pinMode(_inClock, OUTPUT);
     pinMode(_inLoad, OUTPUT);
 
+    // Setting the pin modes for the 4 on-board buttons.
     pinMode(_key1, INPUT_PULLUP);
     pinMode(_key2, INPUT_PULLUP);
     pinMode(_key3, INPUT_PULLUP);
     pinMode(_key4, INPUT_PULLUP);
   
+    // Setting the pin modes for the 8 outputs and 7 segment display controlled with 3 74HC595D
     pinMode(_outData, OUTPUT);
     pinMode(_outEnable, OUTPUT);
     pinMode(_outLoad, OUTPUT);
     pinMode(_outClock, OUTPUT);
 
+    // Setting the pin mode for the RS485 IC Tx/Rx selector.
     pinMode(_rxTxPin, OUTPUT);
 
+    // Setting the pin modes for the 4 current inputs.
     pinMode(_analogInputPins[I1], INPUT);
     pinMode(_analogInputPins[I2], INPUT);
     pinMode(_analogInputPins[I3], INPUT);
     pinMode(_analogInputPins[I4], INPUT);
 
+    // Setting the pin modes for the 4 voltage inputs.
     pinMode(_analogInputPins[V1], INPUT);
     pinMode(_analogInputPins[V2], INPUT);
     pinMode(_analogInputPins[V3], INPUT);
     pinMode(_analogInputPins[V4], INPUT);
 
     PCICR |= B00000101; // Enables pin change interrupts on ports B and D. 
-    PCMSK0 |= B00000001; // Enables pin change interrupt on port B, pin 0. Pin 5 on the nano.
-    PCMSK2 |= B11100000; // Enables pin change interrupts on port D, pins 5, 6 and 7. Pins 8, 7, 6 on the nano.
+    PCMSK0 |= B00000001; // Enables pin change interrupt on port B, pin 0. Pin 8 on the nano.
+    PCMSK2 |= B11100000; // Enables pin change interrupts on port D. These are pins 5, 6, 7 on the nano.
     
-    _previousPortB = PINB;
-    _previousPortD = PIND;
+    _previousPortB = PINB; // Initialize the port b reading.
+    _previousPortD = PIND; // Initialize the port b reading.
 
-    setOutputs(0);
-    _update = true;
-    displayClear();
+    setOutputs(0); // This sets the value of the digital outputs to zero. It's updated in display clear.
+    _update = true; // Forces an update in display clear.
+    displayClear(); // Clears the display and updates the digital outputs.
 }
 
-// Initialize communications.
-void dn24f08::initCommunication(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
+// Initializer if intending to use the Serial class with a start character and end character.
+void dn24f08::init(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
+  init();
   _serialPort = &serialPort;
   _serialPort->begin(baud);
   digitalWrite(_rxTxPin, false);
 
+  _useStartCharacter = true;
   _startCharacter = startCharacter;
   _endCharacter = endCharacter;
 }
 
+// Initializer if intending to use the Serial class with only an end character.
+void dn24f08::init(HardwareSerial& serialPort, uint32_t baud, char endCharacter){
+  init();
+  _serialPort = &serialPort;
+  _serialPort->begin(baud);
+  digitalWrite(_rxTxPin, false);
+
+  _useStartCharacter = false;
+  _receivingData = true;
+  _endCharacter = endCharacter;
+}
+
+// Sets the value of the 8 outputs in binary. (Updated with display engine)
 void dn24f08::setOutputs(uint8_t outputs){
     _outputValue = outputs;
 }
 
+// Set the value of a single output. (Updated with display engine)
 void dn24f08::setOutput(uint8_t output, bool state){
     if(output <= 8 && output > 0){
         _update = true;
@@ -75,29 +98,36 @@ void dn24f08::setOutput(uint8_t output, bool state){
     }
 }
 
+// Set the offset and gain of an analog input.
 void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset){
     _gains[input] = gain;
     _offsets[input] = offset;
 }
 
+// Set the type of analog engine to be used, a time based system or readings.
+// The value is either milliseconds or number oif readings.
 void dn24f08::setAnalogEngineType(engineAverageType type, uint16_t value){
     _analogAverageType = type;
     _analogAverageValue = value;
 }
 
+// Set if the display should be cleared, show an analog input or an integer.
 void dn24f08::setDisplayEngineType(engineDisplayType type){
     _displayType = type;
     _update = true;
 }
 
+// Set the analog pin value to display.
 void dn24f08::setDisplayAnalogPin(analogInputs pin){
     _displayAnalogPin = pin;
 }
 
+// Set the integer value to display.
 void dn24f08::setDisplayInteger(uint16_t number){
     _displayNumber = number;
 }
 
+// If a pin change was detected this is called to cache the time for debouncing.
 void dn24f08::setCheckButton(uint8_t pin){
     if(pin < _buttons){
         _checkButtons[pin] = true;
@@ -105,6 +135,7 @@ void dn24f08::setCheckButton(uint8_t pin){
     }
 }
 
+// Returns if a button press was registered.
 bool dn24f08::getKeyPressed(uint8_t key){
     if(key > 0 && key < _buttons + 1){
         bool pressed = _pressed_flags[key - 1];
@@ -113,10 +144,12 @@ bool dn24f08::getKeyPressed(uint8_t key){
     }
 }
 
+// Returns the 8 output values as a binary number.
 uint8_t dn24f08::getOutputs(){
     return _outputValue;
 }
 
+// Returns the state of an output.
 bool dn24f08::getOutput(uint8_t output){
     if(output <= 8 && output > 0){
         output --;
@@ -124,6 +157,7 @@ bool dn24f08::getOutput(uint8_t output){
     }
 }
 
+// Returns the 8 input values as a binary number.
 uint8_t dn24f08::getInputs(){
     digitalWrite(_inLoad, HIGH);
     delayMicroseconds(5);
@@ -133,11 +167,13 @@ uint8_t dn24f08::getInputs(){
     return _inputValue;
 }
 
+// Returns the state of an input.
 bool dn24f08::getInput(uint8_t input){
     getInputs();
     return (_inputValue & (1 << input)) == 0;
 }
 
+// Returns the value of an analog input.
 float dn24f08::getAnalog(analogInputs input){
     if(input >= I1 && input <= I4){
         // Returns  milliamps for I1-I4.
@@ -149,6 +185,7 @@ float dn24f08::getAnalog(analogInputs input){
     }
 }
 
+// Returns the averaged value of an analog input. (analog engine must be running)
 float dn24f08::getAnalogAverage(analogInputs input){
     if(input >= I1 && input <= I4){
         // Returns average milliamps for I1-I4.
@@ -160,6 +197,7 @@ float dn24f08::getAnalogAverage(analogInputs input){
     }
 }
 
+// Handles the averaging of the analog inputs as per the type. (Time or readings)
 void dn24f08::engineAnalogAverage(){
     if(_iterator < _analogPins){
         bool valueReached = false;
@@ -190,6 +228,7 @@ void dn24f08::engineAnalogAverage(){
     }
 }
 
+// Handles the different display types and updating the outputs.
 void dn24f08::engineDisplay(){
     switch (_displayType) {
         case IDLE:
@@ -208,10 +247,6 @@ void dn24f08::engineDisplay(){
         case INTEGER:
             displayInteger(_displayNumber);
             break;
-
-        case CHARACTERS:
-            
-            break;
             
         default:
             displayClear();
@@ -219,6 +254,7 @@ void dn24f08::engineDisplay(){
     }
 }
 
+// Handles the buttons. Checks if a buttons was pressed, including debounce.
 void dn24f08::engineButtons(){
     for(uint8_t i =0; i < _buttons; i++){
         if(_checkButtons[i] == true && ((millis() - _checkCache_ms[i]) >=_debounce_ms[i])){
@@ -228,6 +264,7 @@ void dn24f08::engineButtons(){
     }
 }
 
+// Handles incoming serial data.
 void dn24f08::engineCommunication(){
   if (_serialPort->available() > 0) {
     char _receivedCharacter = _serialPort->read();
@@ -242,7 +279,7 @@ void dn24f08::engineCommunication(){
     else if (_receivingData == true && _receivedCharacter == _endCharacter) {
       _receivedCharacters[_receivedCharacterIndex] = '\0';
       _receivedCharacterIndex = 0;
-      _receivingData = false;
+      _receivingData = (_useStartCharacter == true) ? false : true;
       _dataReady = true;
     }
     else if (_receivedCharacter == _startCharacter) {
@@ -251,6 +288,7 @@ void dn24f08::engineCommunication(){
   }
 }
 
+// Wrapper for the other engines.
 void dn24f08::engine(){
     engineAnalogAverage();
     engineDisplay();
@@ -339,9 +377,9 @@ ISR(PCINT0_vect) { // Pins D8-D13
     uint8_t portB = PINB;
     uint8_t changed_bits = portB ^ dn24f08::_previousPortB;
     dn24f08::_previousPortB = portB;
-    if (!dn24f08::_objectPointer) return;
+    if (!dn24f08::_classPointer) return;
     if (changed_bits & 1 && (portB & 1) == 0) {
-        dn24f08::_objectPointer->setCheckButton(3);
+        dn24f08::_classPointer->setCheckButton(3);
     }
 }
 
@@ -349,11 +387,11 @@ ISR(PCINT2_vect) { // Pins D0-D7
     uint8_t portD = PIND;
     uint8_t changed_bits = portD ^ dn24f08::_previousPortD;
     dn24f08::_previousPortD = portD;
-    if (!dn24f08::_objectPointer) return;
+    if (!dn24f08::_classPointer) return;
 
     for (uint8_t i = 5; i <= 7; i++) {
         if ((changed_bits >> i) & 1 && ((portD >> i) & 1) == 0) {
-            dn24f08::_objectPointer->setCheckButton(i - 5);
+            dn24f08::_classPointer->setCheckButton(i - 5);
         }
     }
 }

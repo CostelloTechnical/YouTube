@@ -3,8 +3,7 @@
 dn24f08 plc;
 
 void setup() {
-  plc.init();
-  plc.initCommunication(Serial, 9600,  '<', '>');
+  plc.init(Serial, 9600,  '<', '>');
   plc.setDisplayEngineType(ANALOG);
   plc.setDisplayAnalogPin(V1);
   plc.setAnalogCalibration(V1, 1.1029, 0.0459);
