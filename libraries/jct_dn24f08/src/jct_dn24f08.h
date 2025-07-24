@@ -58,8 +58,12 @@ class dn24f08 {
     public:
         dn24f08();
         static dn24f08* _classPointer;
+        // Used to store the previous PINB value to detect a change.
         static volatile uint8_t _previousPortB;
+
+        // Used to store the previous PIND value to detect a change.
         static volatile uint8_t _previousPortD;
+
         // Initializer if not intending to use the Serial class.
         void init();
 
@@ -85,32 +89,77 @@ class dn24f08 {
         // Set if the display should be cleared, show an analog input or an integer.
         void setDisplayEngineType(engineDisplayType type);
 
-        
+        // Sets the analog input to display (engineDisplay must be running and type set to analog)
         void setDisplayAnalogPin(analogInputs pin);
+
+        // Sets a integer to display (engineDisplay must be running and type set to integer)
         void setDisplayInteger(uint16_t number);
+
+        // Used in the ISR when a button push was detected. Final check and debounce done in engineButtons.
         void setCheckButton(uint8_t pin);
+
+        // Returns a true if a debounced button push was registered for a given button.
         bool getKeyPressed(uint8_t key);
+
+        // Returns the 8 output values as a binary number.
         uint8_t getOutputs();
+
+        // Returns the state of a single output.
         bool getOutput(uint8_t output);
+
+        // Returns the 8 input values as a binary number.
         uint8_t getInputs();
+
+        // Returns the state of a single input.
         bool getInput(uint8_t input);
+
+        // Returns the value of single analog input.
         float getAnalog(analogInputs input);
+
+        // Returns the averaged value of an analog input. (analog engine must be running)
         float getAnalogAverage(analogInputs input);
+
+        // Handles the averaging of the analog inputs as per the type. (Time or readings)
         void engineAnalogAverage();
+
+        // Handles the different display types and updating the outputs.
         void engineDisplay();
+
+        // Handles the buttons. Checks if a buttons was pressed, including debounce.
         void engineButtons();
+
+        // Handles incoming serial data.
         void engineCommunication();
+
+        // Wrapper for the other engines.
         void engine();
+
+        // Displays the float on the 7 segment display.
         void displayFloat(float number);
+
+        // Displays the integer on the 7 segment display.
         void displayInteger(uint16_t number);
+
+        // Clears the 7 segment display.
         void displayClear();
+        
+        // Print a String over RS485
         void printS(String toPrint);
+
+        // Print a c-string over RS485
         void print(const char *toPrint);
+
+        // Print a c-string over RS485 with a newline
         void println(const char *toPrint);
+
+        // Returns true if the communication engine received a valid message.
         bool getDataReady();
+
+        // Returns the received message.
         char* getReceivedCharacters();
 
     private:
+        // Writes to the three 74HC595D ICs controlling the digital outputs and 7 segment display.
         void setShift(uint8_t number, uint8_t digit, bool useDecimal);
         
         static const uint8_t _buttons = 4;

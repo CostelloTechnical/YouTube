@@ -3,8 +3,7 @@
 dn24f08 plc;
 
 void setup() {
-  plc.init();
-  plc.initCommunication(Serial, 9600,  '<', '>');
+  plc.init(Serial, 9600,  '<', '>');
 }
 
 void loop() {

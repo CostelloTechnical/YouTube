@@ -104,8 +104,8 @@ void dn24f08::setAnalogCalibration(analogInputs input, float gain, float offset)
     _offsets[input] = offset;
 }
 
-// Set the type of analog engine to be used, a time based system or readings.
-// The value is either milliseconds or number oif readings.
+/*  Set the type of analog engine to be used, a time or readings based system.
+    The value is either milliseconds or number oif readings.*/
 void dn24f08::setAnalogEngineType(engineAverageType type, uint16_t value){
     _analogAverageType = type;
     _analogAverageValue = value;
@@ -296,6 +296,7 @@ void dn24f08::engine(){
     engineCommunication();
 }
 
+// Displays the float on the 7 segment display.
 void dn24f08::displayFloat(float number) {
     dtostrf(number, 0, 3, _converter);
     uint8_t decimalIndex = (strchr(_converter, '.') - _converter);
@@ -310,6 +311,7 @@ void dn24f08::displayFloat(float number) {
     }
 }
 
+// Displays the integer on the 7 segment display.
 void dn24f08::displayInteger(uint16_t number) {
     sprintf(_converter, "%d", number);
     uint8_t offset = strlen(_converter);
@@ -318,6 +320,7 @@ void dn24f08::displayInteger(uint16_t number) {
     }
 }
 
+// Clears the 7 segment display.
 void dn24f08::displayClear() {
     if(_update){
         for (uint8_t i = 0; i < 5; i++) {
@@ -327,6 +330,7 @@ void dn24f08::displayClear() {
     }
 }
 
+// Print a String over RS485
 void dn24f08::printS(String toPrint){
     digitalWrite(_rxTxPin, true);
     delayMicroseconds(500);
@@ -335,6 +339,7 @@ void dn24f08::printS(String toPrint){
     digitalWrite(_rxTxPin, false);
 }
 
+// Print a c-string over RS485
 void dn24f08::print(const char *toPrint){
     digitalWrite(_rxTxPin, true);
     delayMicroseconds(500);
@@ -343,6 +348,7 @@ void dn24f08::print(const char *toPrint){
     digitalWrite(_rxTxPin, false);
 }
 
+// Print a c-string over RS485 with a newline
 void dn24f08::println(const char *toPrint){
     digitalWrite(_rxTxPin, true);
     delayMicroseconds(500);
@@ -351,6 +357,7 @@ void dn24f08::println(const char *toPrint){
     digitalWrite(_rxTxPin, false);
 }
 
+// Returns true if the communication engine received a valid message.
 bool dn24f08::getDataReady(){
   if (_dataReady == true){
     _dataReady = false;
@@ -361,10 +368,12 @@ bool dn24f08::getDataReady(){
   }
 }
 
+// Returns the received message.
 char* dn24f08::getReceivedCharacters(){
   return _receivedCharacters;
 }
 
+// Writes to the three 74HC595D ICs controlling the digital outputs and 7 segment display.
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
     digitalWrite(_outLoad, false);
     shiftOut(_outData, _outClock, MSBFIRST, _outputValue);
@@ -373,6 +382,7 @@ void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
     digitalWrite(_outLoad, true);
 }
 
+// Handles the pin change interrupt for the button on pin 8.
 ISR(PCINT0_vect) { // Pins D8-D13
     uint8_t portB = PINB;
     uint8_t changed_bits = portB ^ dn24f08::_previousPortB;
@@ -383,6 +393,7 @@ ISR(PCINT0_vect) { // Pins D8-D13
     }
 }
 
+// Handles the pin change interrupt for the buttons on pin 5, 6 and 7.
 ISR(PCINT2_vect) { // Pins D0-D7
     uint8_t portD = PIND;
     uint8_t changed_bits = portD ^ dn24f08::_previousPortD;
