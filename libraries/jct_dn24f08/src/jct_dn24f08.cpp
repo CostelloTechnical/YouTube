@@ -56,28 +56,29 @@ void dn24f08::init(){
 }
 
 // Initializer if intending to use the Serial class with a start character and end character.
-void dn24f08::init(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter){
-  init();
-  _serialPort = &serialPort;
-  _serialPort->begin(baud);
-  digitalWrite(_rxTxPin, false);
+void dn24f08::init(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter, uint16_t timeout){
+    init();
+    _serialPort = &serialPort;
+    _serialPort->begin(baud);
+    digitalWrite(_rxTxPin, false);
 
-  _useStartCharacter = true;
-  _startCharacter = startCharacter;
-  _endCharacter = endCharacter;
+    _timeout = timeout;
+    _useStartCharacter = true;
+    _startCharacter = startCharacter;
+    _endCharacter = endCharacter;
 }
 
 // Initializer if intending to use the Serial class with only an end character.
-void dn24f08::init(HardwareSerial& serialPort, uint32_t baud, char endCharacter){
-  init();
-  _serialPort = &serialPort;
-  _serialPort->begin(baud);
-  digitalWrite(_rxTxPin, false);
+void dn24f08::init(HardwareSerial& serialPort, uint32_t baud, char endCharacter, uint16_t timeout){
+    init();
+    _serialPort = &serialPort;
+    _serialPort->begin(baud);
+    digitalWrite(_rxTxPin, false);
 
-  _useStartCharacter = false;
-  _receivingData = true;
-  _endCharacter = endCharacter;
-}
+    _timeout = timeout;
+    _useStartCharacter = false;
+    _endCharacter = endCharacter;
+    }
 
 // Sets the value of the 8 outputs in binary. (Updated with display engine)
 void dn24f08::setOutputs(uint8_t outputs){
@@ -266,26 +267,38 @@ void dn24f08::engineButtons(){
 
 // Handles incoming serial data.
 void dn24f08::engineCommunication(){
-  if (_serialPort->available() > 0) {
-    char _receivedCharacter = _serialPort->read();
-
-    if (_receivingData == true && _receivedCharacter != _endCharacter) {
-      _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
-      _receivedCharacterIndex++;
-      if (_receivedCharacterIndex >= _maxCharacters) {
-        _receivedCharacterIndex = _maxCharacters - 1;
-      }
-    } 
-    else if (_receivingData == true && _receivedCharacter == _endCharacter) {
-      _receivedCharacters[_receivedCharacterIndex] = '\0';
-      _receivedCharacterIndex = 0;
-      _receivingData = (_useStartCharacter == true) ? false : true;
-      _dataReady = true;
+    if(millis() - _timeoutCache > _timeout && _dataReady == false && _receivingData == true){
+        _receivedCharacters[_receivedCharacterIndex] = '\0';
+        _receivedCharacterIndex = 0;
+        _receivingData = false;
+        _timedOut = true;
     }
-    else if (_receivedCharacter == _startCharacter) {
-      _receivingData = true;
-    } 
-  }
+    else if (_serialPort->available() > 0) {
+        char _receivedCharacter = _serialPort->read();
+        if(_useStartCharacter == false && _receivingData == false){
+            _receivingData = true;
+            _timeoutCache = millis();
+        }
+
+        if (_receivingData == true && _receivedCharacter != _endCharacter) {
+            _receivedCharacters[_receivedCharacterIndex] = _receivedCharacter;
+            _receivedCharacterIndex++;
+            if (_receivedCharacterIndex >= _maxCharacters) {
+                _receivedCharacterIndex = _maxCharacters - 1;
+            }
+        }
+        else if (_receivingData == true && _receivedCharacter == _endCharacter) {
+            _receivedCharacters[_receivedCharacterIndex] = '\0';
+            _receivedCharacterIndex = 0;
+            _receivingData = false;
+            _timedOut = false;
+            _dataReady = true;
+        }
+        else if (_receivedCharacter == _startCharacter && _useStartCharacter == true) {
+            _receivingData = true;
+            _timeoutCache = millis();
+        }
+    }
 }
 
 // Wrapper for the other engines.
@@ -361,6 +374,17 @@ void dn24f08::println(const char *toPrint){
 bool dn24f08::getDataReady(){
   if (_dataReady == true){
     _dataReady = false;
+    return true;
+  }//
+  else{
+    return false;
+  }
+}
+
+// Returns if there was a timeout.
+bool dn24f08::getTimedOut(){
+  if (_timedOut == true){
+    _timedOut = false;
     return true;
   }//
   else{

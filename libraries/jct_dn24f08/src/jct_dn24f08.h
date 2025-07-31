@@ -68,10 +68,10 @@ class dn24f08 {
         void init();
 
         // Initializer if intending to use the Serial class with a start character and end character.
-        void init(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter);
+        void init(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter, uint16_t timeout = 3000);
 
         // Initializer if intending to use the Serial class with only an end character.
-        void init(HardwareSerial& serialPort, uint32_t baud, char endCharacter);
+        void init(HardwareSerial& serialPort, uint32_t baud, char endCharacter, uint16_t timeout = 3000);
 
         // Sets the value of the 8 outputs in binary. (Updated with display engine)
         void setOutputs(uint8_t outputs);
@@ -155,6 +155,9 @@ class dn24f08 {
         // Returns true if the communication engine received a valid message.
         bool getDataReady();
 
+        // Returns if there was a timeout.
+        bool getTimedOut();
+
         // Returns the received message.
         char* getReceivedCharacters();
 
@@ -215,10 +218,13 @@ class dn24f08 {
         bool _useStartCharacter = false;
         bool _dataReady = false;
         bool _receivingData  = false;
+        bool _timedOut = false;
+        uint16_t _timeout;
+        uint32_t _timeoutCache = millis();
         const uint8_t _maxCharacters = 255;
         uint8_t _element = 0;
-        char _startCharacter = '<';
-        char _endCharacter = '>';
+        char _startCharacter;
+        char _endCharacter;
         char _receivedCharacter;
         uint8_t _receivedCharacterIndex = 0;
         char _receivedCharacters[255];
