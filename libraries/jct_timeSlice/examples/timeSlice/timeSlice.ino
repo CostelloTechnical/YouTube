@@ -7,7 +7,7 @@
  * allocation time is checked. If the time has been exceeded, the current switch case is exited and the next switch case is 
  * run.
  * 
- * I've tested the simple code below and it appears to be working fine.
+ * I've tested the simple code below and it appears to be working as expected.
  * @date 2025-08-24
 */
 
