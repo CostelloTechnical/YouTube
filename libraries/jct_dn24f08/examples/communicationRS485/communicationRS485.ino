@@ -12,7 +12,7 @@
 dn24f08 plc;
 
 void setup() {
-  plc.init(Serial, 11520, '<', '>'); 
+  plc.init(Serial, 115200, '<', '>'); 
   // plc.init(Serial, 9600, '\n');
 }
 
