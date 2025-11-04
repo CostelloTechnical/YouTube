@@ -187,11 +187,16 @@ bool dn24f08::getOutput(uint8_t output){
 
 // Returns the 8 input values as a binary number.
 uint8_t dn24f08::getInputs(){
-    digitalWrite(_inLoad, HIGH);
-    delayMicroseconds(5);
-    digitalWrite(_inClock, HIGH);
-    _inputValue = shiftIn(_inData, _inClock, MSBFIRST);
+    _inputValue = 0;
     digitalWrite(_inLoad, LOW);
+    digitalWrite(_inLoad, HIGH);
+    for (uint8_t i = 0; i < 8; ++i) {
+        if (i > 0) {
+            digitalWrite(_inClock, HIGH);
+        }
+        _inputValue |= digitalRead(_inData) << (7 - i);
+        digitalWrite(_inClock, LOW);
+    }
     return _inputValue;
 }
 
