@@ -197,7 +197,7 @@ class dn24f08 {
  
         bool _checkButtons[_buttons] = {false, false, false, false};
         bool _pressed_flags[_buttons] = {false, false, false, false};
-        uint16_t _debounce_ms[_buttons] = {100, 100, 100, 100};
+        uint16_t _debounce_ms[_buttons] = {250, 250, 250, 250};
         uint32_t _checkCache_ms[_buttons] = {0, 0, 0, 0};
 
         const uint8_t _inData = 2;
@@ -248,13 +248,13 @@ class dn24f08 {
         bool _timedOut = false;
         uint16_t _timeout;
         uint32_t _timeoutCache = millis();
-        const uint8_t _maxCharacters = 255;
+        const uint8_t _maxCharacters = 100;
         uint8_t _element = 0;
         char _startCharacter;
         char _endCharacter;
         char _receivedCharacter;
         uint8_t _receivedCharacterIndex = 0;
-        char _receivedCharacters[255];
+        char _receivedCharacters[100];
         HardwareSerial* _serialPort;
 };
 #endif
