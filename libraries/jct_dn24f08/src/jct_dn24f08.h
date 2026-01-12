@@ -195,10 +195,10 @@ class dn24f08 {
         static const uint8_t _buttons = 4;
         const uint8_t _keys[_buttons] = {_key1, _key2, _key3, _key4};
  
-        bool _checkButtons[_buttons] = {false, false, false, false};
-        bool _pressed_flags[_buttons] = {false, false, false, false};
-        uint16_t _debounce_ms[_buttons] = {100, 100, 100, 100};
+        uint8_t _checkButtons = 0;  // This variables holds the state for all the buttons. Values are set using bitwise.
+        uint8_t _pressed_flags = 0; // This variables holds the state for all the buttons. Values are set using bitwise.
         uint32_t _checkCache_ms[_buttons] = {0, 0, 0, 0};
+        const uint16_t _debounce_ms = 250;
 
         const uint8_t _inData = 2;
         const uint8_t _inClock = 3;
@@ -248,13 +248,13 @@ class dn24f08 {
         bool _timedOut = false;
         uint16_t _timeout;
         uint32_t _timeoutCache = millis();
-        const uint8_t _maxCharacters = 255;
+        const uint8_t _maxCharacters = 100;
         uint8_t _element = 0;
         char _startCharacter;
         char _endCharacter;
         char _receivedCharacter;
         uint8_t _receivedCharacterIndex = 0;
-        char _receivedCharacters[255];
+        char _receivedCharacters[100];
         HardwareSerial* _serialPort;
 };
 #endif

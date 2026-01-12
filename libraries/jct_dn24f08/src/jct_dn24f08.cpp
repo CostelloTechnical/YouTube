@@ -158,7 +158,7 @@ void dn24f08::setDisplayInteger(uint16_t number){
 // If a pin change was detected this is called to cache the time for debouncing.
 void dn24f08::setCheckButton(uint8_t pin){
     if(pin < _buttons){
-        _checkButtons[pin] = true;
+        _checkButtons |= 1 << pin;
         _checkCache_ms[pin] = millis();
     }
 }
@@ -166,8 +166,8 @@ void dn24f08::setCheckButton(uint8_t pin){
 // Returns if a button press was registered.
 bool dn24f08::getKeyPressed(uint8_t key){
     if(key > 0 && key < _buttons + 1){
-        bool pressed = _pressed_flags[key - 1];
-        _pressed_flags[key - 1] = false;
+        bool pressed = ((_pressed_flags >> key - 1) & 1);
+        _pressed_flags &= ~(1 << (key -1));
         return pressed;
     }
 }
@@ -187,11 +187,16 @@ bool dn24f08::getOutput(uint8_t output){
 
 // Returns the 8 input values as a binary number.
 uint8_t dn24f08::getInputs(){
-    digitalWrite(_inLoad, HIGH);
-    delayMicroseconds(5);
-    digitalWrite(_inClock, HIGH);
-    _inputValue = shiftIn(_inData, _inClock, MSBFIRST);
+    _inputValue = 0;
     digitalWrite(_inLoad, LOW);
+    digitalWrite(_inLoad, HIGH);
+    for (uint8_t i = 0; i < 8; ++i) {
+        if (i > 0) {
+            digitalWrite(_inClock, HIGH);
+        }
+        _inputValue |= digitalRead(_inData) << (7 - i);
+        digitalWrite(_inClock, LOW);
+    }
     return _inputValue;
 }
 
@@ -285,9 +290,14 @@ void dn24f08::engineDisplay(){
 // Handles the buttons. Checks if a buttons was pressed, including debounce.
 void dn24f08::engineButtons(){
     for(uint8_t i =0; i < _buttons; i++){
-        if(_checkButtons[i] == true && ((millis() - _checkCache_ms[i]) >=_debounce_ms[i])){
-            _pressed_flags[i] = digitalRead(_keys[i]) == HIGH;
-            _checkButtons[i] = false;
+        if(((_checkButtons >> i) & 1) == true && ((millis() - _checkCache_ms[i]) >=_debounce_ms)){
+            if(digitalRead(_keys[i])){
+                _pressed_flags |= (1 << i );
+            }
+            else{
+                _pressed_flags &= ~(1 << i);
+            }
+            _checkButtons &= ~(1 << i);
         }
     }
 }
