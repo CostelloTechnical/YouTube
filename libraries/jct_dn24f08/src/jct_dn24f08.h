@@ -29,6 +29,7 @@
 #define JCT_DN24F08_H
 #include <Arduino.h>
 #include <avr/pgmspace.h>
+#include "BareSerial.h"
 
 enum buttonsInputs : uint8_t {
     KEY1 = 1,
@@ -96,10 +97,10 @@ class dn24f08 {
         void init();
 
         // Initializer if intending to use the Serial class with a start character and end character.
-        void init(HardwareSerial& serialPort, uint32_t baud, char startCharacter, char endCharacter, uint16_t timeout = 3000);
+        void init(uint32_t baud, char startCharacter, char endCharacter, uint16_t timeout = 3000);
 
         // Initializer if intending to use the Serial class with only an end character.
-        void init(HardwareSerial& serialPort, uint32_t baud, char endCharacter, uint16_t timeout = 3000);
+        void init(uint32_t baud, char endCharacter, uint16_t timeout = 3000);
 
         // Sets the value of the 8 outputs in binary. (Updated with display engine)
         void setOutputs(uint8_t outputs);
@@ -170,9 +171,6 @@ class dn24f08 {
 
         // Clears the 7 segment display.
         void displayClear();
-        
-        // Print a String over RS485
-        void printS(String toPrint);
 
         // Print a c-string over RS485
         void print(const char *toPrint);
@@ -258,6 +256,6 @@ class dn24f08 {
         char _receivedCharacter;
         uint8_t _receivedCharacterIndex = 0;
         char _receivedCharacters[_maxCharacters];
-        HardwareSerial* _serialPort;
+        BareSerial _serialPort;
 };
 #endif

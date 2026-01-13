@@ -106,10 +106,9 @@ void dn24f08::init(){
 }
 
 // Initializer if intending to use the Serial class with a start character and end character.
-void dn24f08::init(HardwareSerial& serialPort, uint32_t baud,  char startCharacter, char endCharacter, uint16_t timeout){
+void dn24f08::init(uint32_t baud,  char startCharacter, char endCharacter, uint16_t timeout){
     init();
-    _serialPort = &serialPort;
-    _serialPort->begin(baud);
+    _serialPort.begin(baud);
     digitalWrite(_rxTxPin, false);
 
     _timeout = timeout;
@@ -119,10 +118,9 @@ void dn24f08::init(HardwareSerial& serialPort, uint32_t baud,  char startCharact
 }
 
 // Initializer if intending to use the Serial class with only an end character.
-void dn24f08::init(HardwareSerial& serialPort, uint32_t baud, char endCharacter, uint16_t timeout){
+void dn24f08::init(uint32_t baud, char endCharacter, uint16_t timeout){
     init();
-    _serialPort = &serialPort;
-    _serialPort->begin(baud);
+    _serialPort.begin(baud);
     digitalWrite(_rxTxPin, false);
 
     _timeout = timeout;
@@ -333,8 +331,8 @@ void dn24f08::engineCommunication(){
         _receivingData = false;
         _timedOut = true;
     }
-    else if (_serialPort->available() > 0) {
-        char _receivedCharacter = _serialPort->read();
+    else if (_serialPort.available() > 0) {
+        char _receivedCharacter = _serialPort.read();
         if(_useStartCharacter == false && _receivingData == false){
             _receivingData = true;
             _timeoutCache = millis();
@@ -386,7 +384,7 @@ void dn24f08::displayFloat(float number) {
 
 // Displays the integer on the 7 segment display.
 void dn24f08::displayInteger(uint16_t number) {
-    sprintf(_converter, "%d", number);
+    itoa(number, _converter, 10);
     uint8_t offset = strlen(_converter);
     for (uint8_t i = 0; i < 5; i++) {
       setShift(_converter[i] - '0', i + 4 - offset, false);
@@ -403,21 +401,11 @@ void dn24f08::displayClear() {
     }
 }
 
-// Print a String over RS485
-void dn24f08::printS(String toPrint){
-    digitalWrite(_rxTxPin, true);
-    delayMicroseconds(500);
-    _serialPort->print(toPrint);
-    _serialPort->flush();
-    digitalWrite(_rxTxPin, false);
-}
-
 // Print a c-string over RS485
 void dn24f08::print(const char *toPrint){
     digitalWrite(_rxTxPin, true);
     delayMicroseconds(500);
-    _serialPort->print(toPrint);
-    _serialPort->flush();
+    _serialPort.print(toPrint);
     digitalWrite(_rxTxPin, false);
 }
 
@@ -425,8 +413,8 @@ void dn24f08::print(const char *toPrint){
 void dn24f08::println(const char *toPrint){
     digitalWrite(_rxTxPin, true);
     delayMicroseconds(500);
-    _serialPort->println(toPrint);
-    _serialPort->flush();
+    _serialPort.print(toPrint);
+    _serialPort.write('\n');
     digitalWrite(_rxTxPin, false);
 }
 
