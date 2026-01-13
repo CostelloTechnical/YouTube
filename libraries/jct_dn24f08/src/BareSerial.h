@@ -14,9 +14,14 @@ class BareSerial {
 public:
     // Initialize the UART with a specific baud rate
     void begin(long baud) {
+        // [FIX] Enable Double Speed Operation (U2X0)
+        // This reduces the clock divisor from 16 to 8.
+        // Required for 115200 baud on 16MHz Arduino to keep error < 2.5%.
+        UCSR0A = (1 << U2X0);
+
         // Calculate the UBRR value (Baud Rate Register)
         // formula: (F_CPU / (16 * baud)) - 1
-        uint16_t ubrr = (F_CPU / 16 / baud) - 1;
+        uint16_t ubrr = (F_CPU / 8 / baud) - 1;
 
         // Set baud rate registers (High and Low bytes)
         UBRR0H = (unsigned char)(ubrr >> 8);
