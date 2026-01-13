@@ -26,6 +26,29 @@
   attribution back to the original author.
 */
 #include "jct_dn24f08.h"
+#include <avr/pgmspace.h>
+
+const uint8_t  dn24f08::_segmentCharacters[37] PROGMEM = { 
+    0xFC, 0x60, 0xDA, 0xF2, 0x66, 0xB6, 
+    0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 
+    0x9C, 0x7A, 0x9E, 0x8E, 0x6E, 0x2E, 
+    0x60, 0x20, 0x78, 0x1C, 0x2A, 0xFC,
+    0x3A, 0xCE, 0xE6, 0x0A, 0xB6, 0x1E, 
+    0x7C, 0x38, 0x76, 0x02, 0x10, 0xC6, 
+    0x00 
+};
+const uint8_t  dn24f08::_digitEnable[4] PROGMEM = { 
+    0x70, 0xB0, 0XD0, 0xE0 
+};
+const uint8_t  dn24f08::_analogInputPins[ dn24f08::_analogPins] PROGMEM = { 
+    A0, A1, A2, A3, A4, A5, A6, A7 
+};
+const uint8_t  dn24f08::_keys[ dn24f08::_buttons] PROGMEM = { 
+    dn24f08::_key1,  
+    dn24f08::_key2,  
+    dn24f08::_key3, 
+    dn24f08::_key4
+};
 
 dn24f08* dn24f08::_classPointer = nullptr;
 volatile uint8_t dn24f08::_previousPortB = 0;
@@ -59,16 +82,16 @@ void dn24f08::init(){
     pinMode(_rxTxPin, OUTPUT);
 
     // Setting the pin modes for the 4 current inputs.
-    pinMode(_analogInputPins[I1], INPUT);
-    pinMode(_analogInputPins[I2], INPUT);
-    pinMode(_analogInputPins[I3], INPUT);
-    pinMode(_analogInputPins[I4], INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[I1]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[I2]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[I3]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[I4]), INPUT);
 
     // Setting the pin modes for the 4 voltage inputs.
-    pinMode(_analogInputPins[V1], INPUT);
-    pinMode(_analogInputPins[V2], INPUT);
-    pinMode(_analogInputPins[V3], INPUT);
-    pinMode(_analogInputPins[V4], INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[V1]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[V2]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[V3]), INPUT);
+    pinMode(pgm_read_byte(&_analogInputPins[V4]), INPUT);
 
     PCICR |= B00000101; // Enables pin change interrupts on ports B and D. 
     PCMSK0 |= B00000001; // Enables pin change interrupt on port B, pin 0. Pin 8 on the nano.
@@ -210,11 +233,11 @@ bool dn24f08::getInput(uint8_t input){
 float dn24f08::getAnalog(analogInputs input){
     if(input >= I1 && input <= I4){
         // Returns  milliamps for I1-I4.
-        return (analogRead(_analogInputPins[input]) * 20.0 / 1023.0) * _gains[input] + _offsets[input];
+        return (analogRead(pgm_read_byte(&_analogInputPins[input])) * 20.0 / 1023.0) * _gains[input] + _offsets[input];
     }
     else if( input >= V1 && input <= V4 ){
         // Returns a voltage for V1-V4.
-        return (analogRead(_analogInputPins[input]) * 10.0 / 1023.0) * _gains[input] + _offsets[input];
+        return (analogRead(pgm_read_byte(&_analogInputPins[input])) * 10.0 / 1023.0) * _gains[input] + _offsets[input];
     }
 }
 
@@ -251,7 +274,7 @@ void dn24f08::engineAnalogAverage(){
             _averageCounter[_iterator] = 0;
         } 
         else {
-            _averageSum[_iterator] += analogRead(_analogInputPins[_iterator]);
+            _averageSum[_iterator] += analogRead(pgm_read_byte(&_analogInputPins[_iterator]));
             _averageCounter[_iterator]++;
         }
         _iterator++;
@@ -291,7 +314,7 @@ void dn24f08::engineDisplay(){
 void dn24f08::engineButtons(){
     for(uint8_t i =0; i < _buttons; i++){
         if(((_checkButtons >> i) & 1) == true && ((millis() - _checkCache_ms[i]) >=_debounce_ms)){
-            if(digitalRead(_keys[i])){
+            if(digitalRead(pgm_read_byte(&_keys[i]))){
                 _pressed_flags |= (1 << i );
             }
             else{
@@ -434,12 +457,19 @@ char* dn24f08::getReceivedCharacters(){
   return _receivedCharacters;
 }
 
-// Writes to the three 74HC595D ICs controlling the digital outputs and 7 segment display.
 void dn24f08::setShift(uint8_t number, uint8_t digit, bool useDecimal) {
+    if (digit > 3) { 
+        return; 
+    }
+
+    if (number >= 37) {
+        number = 36; 
+    }
+
     digitalWrite(_outLoad, false);
     shiftOut(_outData, _outClock, MSBFIRST, _outputValue);
-    shiftOut(_outData, _outClock, LSBFIRST, _digitEnable[digit]);
-    shiftOut(_outData, _outClock, LSBFIRST, _segmentCharacters[number] + (_decimalPoint * useDecimal));
+    shiftOut(_outData, _outClock, LSBFIRST, pgm_read_byte(&_digitEnable[digit]));
+    shiftOut(_outData, _outClock, LSBFIRST, pgm_read_byte(&_segmentCharacters[number]) + (_decimalPoint * useDecimal));
     digitalWrite(_outLoad, true);
 }
 

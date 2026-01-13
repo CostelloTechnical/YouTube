@@ -28,15 +28,16 @@
 #ifndef JCT_DN24F08_H
 #define JCT_DN24F08_H
 #include <Arduino.h>
+#include <avr/pgmspace.h>
 
-enum buttonsInputs {
+enum buttonsInputs : uint8_t {
     KEY1 = 1,
     KEY2 = 2,
     KEY3 = 3,
     KEY4 = 4
 };
 
-enum analogInputs {
+enum analogInputs : uint8_t {
     I1 = 0,
     I2 = 1,
     I3 = 2,
@@ -47,7 +48,7 @@ enum analogInputs {
     V4 = 7
 };
 
-enum digitalInputs {
+enum digitalInputs : uint8_t {
     IN1 = 1,
     IN2 = 2,
     IN3 = 3,
@@ -58,7 +59,7 @@ enum digitalInputs {
     IN8 = 8
 };
 
-enum digitalOutputs {
+enum digitalOutputs : uint8_t{
     CH1 = 1,
     CH2 = 2,
     CH3 = 3,
@@ -69,12 +70,12 @@ enum digitalOutputs {
     CH8 = 8
 };
 
-enum engineAverageType {
+enum engineAverageType : uint8_t{
     TIME_MS = 0,
     READINGS = 1
 };
 
-enum engineDisplayType {
+enum engineDisplayType : uint8_t{
     IDLE = 0,
     CLEAR = 1,
     ANALOG = 2,
@@ -193,44 +194,46 @@ class dn24f08 {
         void setShift(uint8_t number, uint8_t digit, bool useDecimal);
         
         static const uint8_t _buttons = 4;
-        const uint8_t _keys[_buttons] = {_key1, _key2, _key3, _key4};
+        static const uint8_t _keys[_buttons];
  
         uint8_t _checkButtons = 0;  // This variables holds the state for all the buttons. Values are set using bitwise.
         uint8_t _pressed_flags = 0; // This variables holds the state for all the buttons. Values are set using bitwise.
         uint32_t _checkCache_ms[_buttons] = {0, 0, 0, 0};
-        const uint16_t _debounce_ms = 250;
+        static const uint16_t _debounce_ms = 250;
 
-        const uint8_t _inData = 2;
-        const uint8_t _inClock = 3;
-        const uint8_t _inLoad = 4;
+        static const uint8_t _inData = 2;
+        static const uint8_t _inClock = 3;
+        static const uint8_t _inLoad = 4;
 
-        const uint8_t _key1 = 5; // (PD5) (PCINT21) (PCIE2)
-        const uint8_t _key2 = 6; // (PD6) (PCINT22) (PCIE2)
-        const uint8_t _key3 = 7; // (PD7) (PCINT23) (PCIE2)
-        const uint8_t _key4 = 8; // (PB0) (PCINT0) (PCIE0)
+        static const uint8_t _key1 = 5; // (PD5) (PCINT21) (PCIE2)
+        static const uint8_t _key2 = 6; // (PD6) (PCINT22) (PCIE2)
+        static const uint8_t _key3 = 7; // (PD7) (PCINT23) (PCIE2)
+        static const uint8_t _key4 = 8; // (PB0) (PCINT0) (PCIE0)
 
-        const uint8_t _outData = 9;
-        const uint8_t _outEnable = 10;
-        const uint8_t _outLoad = 11;
-        const uint8_t _outClock = 12;
+        static const uint8_t _outData = 9;
+        static const uint8_t _outEnable = 10;
+        static const uint8_t _outLoad = 11;
+        static const uint8_t _outClock = 12;
 
-        const uint8_t _rxTxPin = 13;
 
-        const uint8_t _segmentCharacters[37] = { 0xFC, 0x60, 0xDA, 0xF2, 0x66, 0xB6, 0xBE, 0xE0, 0xFE, 0xF6, 0xEE, 0x3E, 0x9C, 0x7A, 0x9E, 0x8E, 0x6E, 0x2E, 0x60, 0x20, 0x78, 0x1C, 0x2A, 0xFC, 0x3A, 0xCE, 0xE6, 0x0A, 0xB6, 0x1E, 0x7C, 0x38, 0x76, 0x02, 0x10, 0xC6, 0x00 };
-        const uint8_t _digitEnable[4] = { 0x70, 0xB0, 0XD0, 0xE0 };
-        const uint8_t _decimalPoint = 0x1;
+        static const uint8_t _segmentCharacters[37];
+        static const uint8_t _digitEnable[4];
+
+        static const uint8_t _rxTxPin = 13;
+
+        static const uint8_t _decimalPoint = 0x1;
 
         static const uint8_t _analogPins = 8;
-        const uint8_t _analogInputPins[_analogPins] = { A0, A1, A2, A3, A4, A5, A6, A7 };
+        static const uint8_t _analogInputPins[_analogPins];
         float _gains[_analogPins] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
         float _offsets[_analogPins] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
         float _averageAnalog[_analogPins] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
         uint32_t _averageSum[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
         uint32_t _averageTime_ms[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-        uint32_t _averageCounter[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        uint16_t _averageCounter[_analogPins] = { 0, 0, 0, 0, 0, 0, 0, 0 };
         uint8_t _iterator = 0;
 
-        char _converter[20];
+        char _converter[10];
         uint8_t _outputValue = 0;
         uint8_t _inputValue = 0;
 
@@ -248,13 +251,13 @@ class dn24f08 {
         bool _timedOut = false;
         uint16_t _timeout;
         uint32_t _timeoutCache = millis();
-        const uint8_t _maxCharacters = 100;
+        static const uint8_t _maxCharacters = 50;
         uint8_t _element = 0;
         char _startCharacter;
         char _endCharacter;
         char _receivedCharacter;
         uint8_t _receivedCharacterIndex = 0;
-        char _receivedCharacters[100];
+        char _receivedCharacters[_maxCharacters];
         HardwareSerial* _serialPort;
 };
 #endif
